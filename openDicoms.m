@@ -1,5 +1,4 @@
-function openDicoms(imagePath)
-
+function imageCoreInfo =  openDicoms(imagePath)
     folderElements = dir([imagePath filesep '*.dcm']);
     
     % If .dcm files were found
@@ -13,6 +12,13 @@ function openDicoms(imagePath)
     
     rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata);
     
+    [sortedDicomMetadata, sortedImageMatrix, sortedIndexes] = ...
+        sortSlices(dicomMetadata, rawImageMatrix);
+    
+    imageCoreInfo.fileNames = dicomFileNames;
+    imageCoreInfo.matrix = sortedDicomMetadata;
+    imageCoreInfo.metadata = sortedImageMatrix;
+    imageCoreInfo.sortedIndexes = sortedIndexes;
 end
 
 function rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata)    
@@ -66,4 +72,19 @@ function [dicomFileNames, dicomMetadata] = discoverDicomFileNames(...
     % Remove emptie cell
     dicomFileNames = dicomFileNames(~cellfun('isempty', dicomFileNames));
     dicomMetadata = dicomMetadata(~cellfun('isempty', dicomMetadata));
+end
+
+function [sortedDicomMetadata, sortedImageMatrix, sortedIndexes] = ...
+    sortSlices(dicomMetadata, rawImageMatrix)
+
+    nSlices = size(rawImageMatrix, 3);
+    sliceLocations = zeros(1, nSlices);
+    
+    for index = 1:nSlices
+        sliceLocations(index) = dicomMetadata{index}.SliceLocation;
+    end
+    
+    [~, sortedIndexes] = sort(sliceLocations);
+    sortedDicomMetadata = dicomMetadata(sortedIndexes);
+    sortedImageMatrix = rawImageMatrix(:, :, sortedIndexes);
 end
