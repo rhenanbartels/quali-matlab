@@ -1,31 +1,40 @@
 function openDicoms(imagePath)
 
-    %imagePath = '/Users/lismariecarvalho/Documents/rhenanbartels-qctworkflow-bafdf5ca4826_2/ExampleCT/381111_BAL Kopie';
-    imagePath = '/Users/lismariecarvalho/Documents/projects/matlab/qali';
     folderElements = dir([imagePath filesep '*.dcm']);
     
     % If .dcm files were found
     if ~isempty(folderElements)
-        dicomFileNames = getDicomFileNames(imagePath, folderElements);
+        [dicomFileNames, dicomMetadata] = getDicomFileNames(imagePath,...
+            folderElements);
     else
     % Maybe dicom files don't have .dcm extension.
         [dicomFileNames, dicomMetadata] = discoverDicomFileNames(imagePath);
     end
+    
+    rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata);
+    
 end
 
-function getDicomImages(dicomFileNames)
+function rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata)    
+    nRows = dicomMetadata{1}.Rows;
+    nCols = dicomMetadata{1}.Columns;
     nDicoms = length(dicomFileNames);
-     = 
+    rawImageMatrix = zeros(nRows, nCols, nDicoms);
+
     for index = 1:nDicoms
+        rawImageMatrix(:, :, index) =  dicomread(dicomFileNames{index});
     end
 end
 
-function dicomFileNames = getDicomFileNames(imagePath, folderElements)
+function [dicomFileNames, dicomMetadata] = getDicomFileNames(imagePath, folderElements)
     nElements = length(folderElements);
     dicomFileNames = cell(1, nElements);
+    dicomMetadata = cell(1, nElements);
     for index = 1:nElements
         dicomFileNames{index} = [imagePath filesep...
             folderElements(index).name];
+        dicomMetadata{index} = dicominfo([imagePath filesep...
+            folderElements(index).name]);
     end
 end
 
