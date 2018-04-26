@@ -16,8 +16,8 @@ function imageCoreInfo =  openDicoms(imagePath)
         sortSlices(dicomMetadata, rawImageMatrix);
     
     imageCoreInfo.fileNames = dicomFileNames;
-    imageCoreInfo.matrix = sortedDicomMetadata;
-    imageCoreInfo.metadata = sortedImageMatrix;
+    imageCoreInfo.metadata = sortedDicomMetadata;
+    imageCoreInfo.matrix = sortedImageMatrix;
     imageCoreInfo.sortedIndexes = sortedIndexes;
 end
 
