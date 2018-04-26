@@ -13,7 +13,8 @@ function mainFig = startMainInterface()
         'Name', ['Qualitative Analysis of Lung Images - 0.0.0dev0 -'...
                  ' Matlab Version'],...
         'Color', mainInterfaceColor,...
-        'Resize', 'Off');
+        'Resize', 'Off',...
+        'WindowButtonMotionFcn', @mouseMove);
     
   informationAxes = axes('Parent', mainFig,...
       'Units', 'Normalized',...
@@ -153,6 +154,12 @@ function importImage(hObject, eventdata)
     
     guidata(hObject, handles)
 end
+
+function mouseMove(hObject, eventdata)
+    handles = guidata(hObject);
+    imageAxes = handles.gui.imageAxes;
+    refreshPixelPositionInfo(handles, imageAxes);
+end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -194,4 +201,41 @@ function startScreenMetadata(handles, metadata)
     
     set(handles.gui.textSliceThickness, 'String',...
         sprintf('Slice Thickness: %.2f', metadata.SliceThickness));
+end
+
+function refreshPixelPositionInfo(handles, mainAxes)
+
+if isfield(handles, 'data')
+    C = get(mainAxes,'currentpoint');
+
+    xlim = get(mainAxes,'xlim');
+    ylim = get(mainAxes,'ylim');
+
+    row = round(C(1));
+    col = round(C(1, 2));
+
+    %Check if pointer is inside Navigation Axes.
+    outX = ~any(diff([xlim(1) C(1,1) xlim(2)])<0);
+    outY = ~any(diff([ylim(1) C(1,2) ylim(2)])<0);
+    if outX && outY
+        %Get the current Slice
+        currentSlicePositionString = get(handles.gui.textSliceNumber,...
+            'String');
+        tempSlicePosition = regexp(currentSlicePositionString, '/',...
+            'split');
+        slicePosition = str2double(tempSlicePosition(1));
+
+        currentSlice = handles.data.imageCoreInfo.matrix(:, :,...
+            slicePosition);
+
+        pixelValue = currentSlice(col, row);
+
+        set(handles.gui.textPixelValue, 'String',...
+            sprintf('Pixel Value = %.2f', double(pixelValue)))
+    else
+        set(handles.gui.textPixelValue, 'String',...
+            sprintf('Pixel Value = -'))
+    end
+
+end
 end
