@@ -42,8 +42,13 @@ function mainFig = startMainInterface()
         'BackGroundColor', [0.1, 0.1, 0.1],...
         'ForeGroundColor', [54/255, 189/255, 1],...
         'FontWeight', 'Bold',...
-        'FontSize', 14);
+        'FontSize', 14,...
+        'Callback', @importImage);
+    %Start data handles
+    handles.data = '';
     
+    handles.gui = guihandles(mainFig);
+    guidata(mainFig, handles);
 end
 
 function startAxesMetadataInfo(imageAxes)
@@ -107,3 +112,32 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function importImage(hObject, eventdata)
+    % Import Images
+    handles = guidata(hObject);
+    if isfield(handles.data, 'lastVisitedFolder')
+        rootPath = uigetdir(handles.data.lastVisitedFolder,...
+            'Select a folder with Dicom images');
+    else
+        rootPath = uigetdir('.', 'Select a folder with Dicom images');
+    end
+    
+    if ~isempty(rootPath)
+        handles.data.lastVisitedFolder = rootPath;
+        handles.data.imageCoreInfo = openDicoms(rootPath);
+        
+        %Show first Slice
+        showImageSlice(handles.gui.imageAxes,...
+            handles.data.imageCoreInfo.matrix(:, :, 1));
+    end
+    
+    guidata(hObject, handles)
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                             UTILS                                
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function showImageSlice(axisObject, imageSlice)
+    axes(axisObject);
+    imagesc(imageSlice);
+    colormap(gray)
+end
