@@ -14,7 +14,8 @@ function mainFig = startMainInterface()
                  ' Matlab Version'],...
         'Color', mainInterfaceColor,...
         'Resize', 'Off',...
-        'WindowButtonMotionFcn', @mouseMove);
+        'WindowButtonMotionFcn', @mouseMove,...
+        'WindowScrollWheelFcn', @refreshSlicePosition);
     
   informationAxes = axes('Parent', mainFig,...
       'Units', 'Normalized',...
@@ -237,5 +238,62 @@ if isfield(handles, 'data')
             sprintf('Pixel Value = -'))
     end
 
+end
+end
+
+function newSlicePosition = getSlicePosition(slicePositionString, direction)
+    tempSlicePosition = regexp(slicePositionString, '/', 'split');
+
+    if direction > 0
+        newSlicePosition = str2double(tempSlicePosition(1)) + 1;
+    else
+        newSlicePosition = str2double(tempSlicePosition(1)) - 1;
+    end
+end
+
+function refreshSlicePosition(hObject, eventdata)
+
+slicePositionPlaceHolder = '%d / %d';
+
+handles = guidata(hObject);
+
+if isfield(handles, 'data')
+
+    nSlices = size(handles.data.imageCoreInfo.matrix, 3);
+
+    currentSlicePosition = get(handles.gui.textSliceNumber, 'String');
+
+    %Get the new slice position based on the displayed values using regexp
+    newSlicePosition = getSlicePosition(currentSlicePosition,...
+        eventdata.VerticalScrollCount);
+
+    %Make sure that the slice number return to 1 if it is bigger than the
+    %number of slices
+    newSlicePosition = mod(newSlicePosition, nSlices);
+
+    %Make sure that the slice number return to nSlices if it is smaller than the
+    %number of slices
+    if ~newSlicePosition && eventdata.VerticalScrollCount < 0
+        newSlicePosition = nSlices;
+    elseif ~newSlicePosition && eventdata.VerticalScrollCount >= 0 %%% -- INFO -- matlab has some hard time with the scroll of my laptop, in this case VerticalScrollCount == 0, it get an error latter in this function and this is error realy I need to restart matlab. I changed > to >=
+        newSlicePosition = 1;
+    end
+
+    %Refresh slice position information.
+    set(handles.gui.textSliceNumber, 'String',...
+        sprintf(slicePositionPlaceHolder, newSlicePosition, nSlices));
+  
+    showImageSlice(handles.gui.imageAxes,...
+        handles.data.imageCoreInfo.matrix(:, :, newSlicePosition));
+    
+
+    %Refresh pixel value information.
+    refreshPixelPositionInfo(handles, handles.gui.imageAxes)
+    
+    %Refresh Slice Location information.
+    updateSliceLocationText(handles.gui.textSliceLocation,...
+        handles.data.imageCoreInfo.metadata{newSlicePosition}.SliceLocation);
+
+    guidata(hObject, handles)
 end
 end
