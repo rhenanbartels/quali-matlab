@@ -130,7 +130,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function importImage(hObject, eventdata)
+function importImage(hObject, ~)
     % Import Images
     handles = guidata(hObject);
     if isfield(handles.data, 'lastVisitedFolder')
@@ -156,7 +156,7 @@ function importImage(hObject, eventdata)
     guidata(hObject, handles)
 end
 
-function mouseMove(hObject, eventdata)
+function mouseMove(hObject, ~)
     handles = guidata(hObject);
     if ~isempty(handles.data)
         imageAxes = handles.gui.imageAxes;
