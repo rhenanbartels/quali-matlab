@@ -65,6 +65,8 @@ function mainFig = startMainInterface()
         'ForeGroundColor', [54/255, 189/255, 1],...
         'FontWeight', 'Bold',...
         'FontSize', 14,...
+        'Enable', 'Off',...
+        'Tag', 'importMaskButton',...
         'Callback', @openMask);
     
     %Start data handles
@@ -166,6 +168,9 @@ function openImage(hObject, ~)
             
             % Save imported data
             guidata(hObject, handles)
+            
+            % Enable controls
+            set(handles.gui.importMaskButton, 'Enable', 'On')
         end
         
     end
