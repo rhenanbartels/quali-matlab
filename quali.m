@@ -158,8 +158,10 @@ end
 
 function mouseMove(hObject, eventdata)
     handles = guidata(hObject);
-    imageAxes = handles.gui.imageAxes;
-    refreshPixelPositionInfo(handles, imageAxes);
+    if ~isempty(handles.data)
+        imageAxes = handles.gui.imageAxes;
+        refreshPixelPositionInfo(handles, imageAxes);
+    end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
