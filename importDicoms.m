@@ -1,4 +1,4 @@
-function imageCoreInfo =  openDicoms(imagePath)
+function imageCoreInfo =  importDicoms(imagePath)
     folderElements = dir([imagePath filesep '*.dcm']);
     
     % If .dcm files were found
