@@ -1,5 +1,5 @@
 function masks = importMasks(maskPath)
-    if strfind(maskPath, 'hdr')
+    if contains(maskPath, 'hdr')
         masks = analyze75read(maskPath);
     else
         masks = nrrd_read(maskPath);
