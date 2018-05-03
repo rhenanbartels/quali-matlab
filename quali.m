@@ -159,6 +159,9 @@ function openImage(hObject, ~)
         
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)
+            logFrame = createLogFrame();
+            displayLog(logFrame, 'Importing Dicoms...', 0)
+            
             %Show first Slice
             showImageSlice(handles.gui.imageAxes,...
                 handles.data.imageCoreInfo.matrix(:, :, 1));
@@ -167,10 +170,13 @@ function openImage(hObject, ~)
                 handles.data.imageCoreInfo.metadata{1})
             
             % Save imported data
-            guidata(hObject, handles)
-            
+            guidata(hObject, handles)            
+                        
             % Enable controls
             set(handles.gui.importMaskButton, 'Enable', 'On')
+            
+            % Close log frame
+            close(logFrame)
         end
         
     end
