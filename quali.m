@@ -55,7 +55,7 @@ function mainFig = startMainInterface()
         'ForeGroundColor', [54/255, 189/255, 1],...
         'FontWeight', 'Bold',...
         'FontSize', 14,...
-        'Callback', @importImage);
+        'Callback', @openImage);
     %Start data handles
     handles.data = '';
     
@@ -130,7 +130,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function importImage(hObject, ~)
+function openImage(hObject, ~)
     % Import Images
     handles = guidata(hObject);
     if isfield(handles.data, 'lastVisitedFolder')
