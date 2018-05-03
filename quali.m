@@ -56,6 +56,17 @@ function mainFig = startMainInterface()
         'FontWeight', 'Bold',...
         'FontSize', 14,...
         'Callback', @openImage);
+    
+        uicontrol('Parent', mainPanel,...
+        'Units', 'Normalized',...
+        'Position', [0.1, 0.2, 0.08, 0.6],...
+        'String', 'Import Mask',...
+        'BackGroundColor', [0.1, 0.1, 0.1],...
+        'ForeGroundColor', [54/255, 189/255, 1],...
+        'FontWeight', 'Bold',...
+        'FontSize', 14,...
+        'Callback', @openMask);
+    
     %Start data handles
     handles.data = '';
     
@@ -140,9 +151,9 @@ function openImage(hObject, ~)
         rootPath = uigetdir('.', 'Select a folder with Dicom images');
     end
     
-    if ~isempty(rootPath)
+    if rootPath
         handles.data.lastVisitedFolder = rootPath;
-        handles.data.imageCoreInfo = openDicoms(rootPath);
+        handles.data.imageCoreInfo = importDicoms(rootPath);
         
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)
@@ -158,6 +169,28 @@ function openImage(hObject, ~)
         end
         
     end
+end
+
+function openMask(hObject, ~)
+    handles = guidata(hObject);
+    if isfield(handles.data, 'lastVisitedFolder')
+        [fileName, pathName] = uigetfile('*.hdr;*.nrrd',...
+            'Select the file containing the masks',...
+            handles.data.lastVisitedFolder);
+    else
+        [fileName, pathName] = uigetfile('*.hdr;*.nrrd',...
+            'Select the file containing the masks');
+    end
+    
+    if ~isempty(fileName)
+        rootPath = [pathName fileName];
+        handles.data.imageCoreInfo.masks = importMasks(rootPath);
+        handles.data.lastVisitedFolder = rootPath;
+        
+        % Save imported mask
+        guidata(hObject, handles)
+    end
+    
 end
 
 function mouseMove(hObject, ~)
