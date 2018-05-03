@@ -10,15 +10,20 @@ function imageCoreInfo =  openDicoms(imagePath)
         [dicomFileNames, dicomMetadata] = discoverDicomFileNames(imagePath);
     end
     
-    rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata);
+    imageCoreInfo = [];
     
-    [sortedDicomMetadata, sortedImageMatrix, sortedIndexes] = ...
-        sortSlices(dicomMetadata, rawImageMatrix);
-    
-    imageCoreInfo.fileNames = dicomFileNames;
-    imageCoreInfo.metadata = sortedDicomMetadata;
-    imageCoreInfo.matrix = sortedImageMatrix;
-    imageCoreInfo.sortedIndexes = sortedIndexes;
+    % Check if any Dicom was found.
+    if ~isempty(dicomFileNames) && ~isempty(dicomMetadata)
+        rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata);
+        
+        [sortedDicomMetadata, sortedImageMatrix, sortedIndexes] = ...
+            sortSlices(dicomMetadata, rawImageMatrix);
+        
+        imageCoreInfo.fileNames = dicomFileNames;
+        imageCoreInfo.metadata = sortedDicomMetadata;
+        imageCoreInfo.matrix = sortedImageMatrix;
+        imageCoreInfo.sortedIndexes = sortedIndexes;
+    end
 end
 
 function rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata)    

@@ -144,21 +144,25 @@ function importImage(hObject, ~)
         handles.data.lastVisitedFolder = rootPath;
         handles.data.imageCoreInfo = openDicoms(rootPath);
         
-        %Show first Slice
-        showImageSlice(handles.gui.imageAxes,...
-            handles.data.imageCoreInfo.matrix(:, :, 1));
-        
-        startScreenMetadata(handles,...
-            handles.data.imageCoreInfo.metadata{1})
+        % Check if any image was found
+        if ~isempty(handles.data.imageCoreInfo)
+            %Show first Slice
+            showImageSlice(handles.gui.imageAxes,...
+                handles.data.imageCoreInfo.matrix(:, :, 1));
+            
+            startScreenMetadata(handles,...
+                handles.data.imageCoreInfo.metadata{1})
+            
+            % Save imported data
+            guidata(hObject, handles)
+        end
         
     end
-    
-    guidata(hObject, handles)
 end
 
 function mouseMove(hObject, ~)
     handles = guidata(hObject);
-    if ~isempty(handles.data)
+    if isfield(handles.data, 'imageCoreInfo')
         imageAxes = handles.gui.imageAxes;
         refreshPixelPositionInfo(handles, imageAxes);
     end
