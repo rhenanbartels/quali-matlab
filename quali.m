@@ -244,19 +244,24 @@ function updateSliceNumberText(textObject, sliceNumber, nSlices)
     set(textObject, 'String', sprintf('%d / %d', sliceNumber, nSlices));
 end
 
-function updateSliceLocationText(textObject, sliceLocation)
-    set(textObject, 'String', sprintf('Slice Location: %.2f',...
-        sliceLocation));
+function updateSliceLocationText(textObject, metadata,  sliceIndex)
+    if sliceIndex > 0
+        metadata = metadata{sliceIndex};
+    end
+    if isfield(metadata, 'SliceLocation')
+        set(textObject, 'String', sprintf('Slice Location: %.2f',...
+            sliceLocation));
+    end
 end
 
 function startScreenMetadata(handles, metadata)
     % Show Slice Number
     updateSliceNumberText(handles.gui.textSliceNumber, 1,...
         size(handles.data.imageCoreInfo.matrix, 3))
-    
+        
     updateSliceLocationText(handles.gui.textSliceLocation,...
-        metadata.SliceLocation)
-    
+        metadata, -1)
+        
     % Show Image Dimensions
     set(handles.gui.textImageDimensions, 'String',...
         sprintf('Image Dimension: %d x %d', metadata.Rows,...
@@ -310,8 +315,14 @@ end
 
 function newSlicePosition = getSlicePosition(slicePositionString, direction)
     tempSlicePosition = regexp(slicePositionString, '/', 'split');
+    
+    if nargin == 1
+        direction = NaN;
+    end
 
-    if direction > 0
+    if isnan(direction)
+        newSlicePosition = str2double(tempSlicePosition(1));
+    elseif direction > 0
         newSlicePosition = str2double(tempSlicePosition(1)) + 1;
     else
         newSlicePosition = str2double(tempSlicePosition(1)) - 1;
@@ -331,9 +342,13 @@ if isfield(handles, 'data')
     currentSlicePosition = get(handles.gui.textSliceNumber, 'String');
 
     %Get the new slice position based on the displayed values using regexp
-    newSlicePosition = getSlicePosition(currentSlicePosition,...
-        eventdata.VerticalScrollCount);
-
+    if isprop(eventdata, 'VerticalScrollCount')
+        newSlicePosition = getSlicePosition(currentSlicePosition,...
+            eventdata.VerticalScrollCount);
+    else
+        newSlicePosition = getSlicePosition(currentSlicePosition);
+    end
+       
     %Make sure that the slice number return to 1 if it is bigger than the
     %number of slices
     newSlicePosition = mod(newSlicePosition, nSlices);
