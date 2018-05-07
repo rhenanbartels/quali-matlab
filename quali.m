@@ -159,6 +159,9 @@ function openImage(hObject, ~)
         
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)
+            logFrame = createLogFrame();
+            displayLog(logFrame, 'Importing Dicoms...', 0)
+            
             %Show first Slice
             showImageSlice(handles.gui.imageAxes,...
                 handles.data.imageCoreInfo.matrix(:, :, 1));
@@ -167,10 +170,13 @@ function openImage(hObject, ~)
                 handles.data.imageCoreInfo.metadata{1})
             
             % Save imported data
-            guidata(hObject, handles)
-            
+            guidata(hObject, handles)            
+                        
             % Enable controls
             set(handles.gui.importMaskButton, 'Enable', 'On')
+            
+            % Close log frame
+            close(logFrame)
         end
         
     end
@@ -188,12 +194,17 @@ function openMask(hObject, ~)
     end
     
     if ~isempty(fileName)
+        logFrame = createLogFrame();
+        displayLog(logFrame, 'Importing masks...', 0)
+        
         rootPath = [pathName fileName];
         handles.data.imageCoreInfo.masks = importMasks(rootPath);
         handles.data.lastVisitedFolder = rootPath;
         
         % Save imported mask
         guidata(hObject, handles)
+        
+        close(logFrame);
     end
     
 end
@@ -340,4 +351,32 @@ if isfield(handles, 'data')
 
     guidata(hObject, handles)
 end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                             LOG FRAME                            
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function figObject = createLogFrame()
+    %disply calculation log.
+    figObject = figure('Units', 'Normalized',...
+        'Position', [0.3, 0.4, 0.4, 0.2],...
+        'Toolbar', 'None',...
+        'Menubar', 'None',...
+        'Color', 'black',...
+        'Name', 'Log',...
+        'NumberTitle', 'Off',...
+        'Resize', 'Off');
+end
+
+function displayLog(figObj, msg, clearAxes)
+   if clearAxes
+       cla
+   else
+       ax = axes('Parent', figObj, 'Visible', 'Off');
+       axes(ax)
+    end
+
+    text(0.5, 0.5, msg, 'Color', 'white', 'HorizontalAlignment',...
+    'center', 'FontSize', 14)
+
+    drawnow
 end
