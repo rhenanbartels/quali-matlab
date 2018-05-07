@@ -194,12 +194,17 @@ function openMask(hObject, ~)
     end
     
     if ~isempty(fileName)
+        logFrame = createLogFrame();
+        displayLog(logFrame, 'Importing masks...', 0)
+        
         rootPath = [pathName fileName];
         handles.data.imageCoreInfo.masks = importMasks(rootPath);
         handles.data.lastVisitedFolder = rootPath;
         
         % Save imported mask
         guidata(hObject, handles)
+        
+        close(logFrame);
     end
     
 end
