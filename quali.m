@@ -272,8 +272,13 @@ function startSlicer(slicerObject, imageCoreInfo)
 end
 
 function showImageSlice(axisObject, imageSlice)
-    axes(axisObject);
-    imshow(imageSlice);
+    axesChildren = get(axisObject, 'children');
+    if ~isempty(axesChildren)
+        set(axesChildren, 'cdata', imageSlice);   
+    else
+        axes(axisObject)
+        imshow(imageSlice)
+    end
     colormap(gray)
     set(axisObject, 'XtickLabel', [])
     set(axisObject, 'YtickLabel', [])
@@ -330,7 +335,7 @@ if isfield(handles, 'data')
     %Check if pointer is inside Navigation Axes.
     outX = ~any(diff([xlim(1) C(1,1) xlim(2)])<0);
     outY = ~any(diff([ylim(1) C(1,2) ylim(2)])<0);
-    if outX && outY
+    if outX && outY && row && col
         %Get the current Slice
         currentSlicePositionString = get(handles.gui.textSliceNumber,...
             'String');
@@ -375,7 +380,7 @@ slicePositionPlaceHolder = '%d / %d';
 
 handles = guidata(hObject);
 
-if isfield(handles, 'data')
+if ~isempty(handles.data)
 
     nSlices = size(handles.data.imageCoreInfo.matrix, 3);
 
@@ -406,7 +411,7 @@ if isfield(handles, 'data')
         sprintf(slicePositionPlaceHolder, newSlicePosition, nSlices));
   
     showImageSlice(handles.gui.imageAxes,...
-        handles.data.imageCoreInfo.matrix(:, :, newSlicePosition));
+        squeeze(handles.data.imageCoreInfo.matrix(:, :, newSlicePosition, :)));
     
 
     %Refresh pixel value information.
@@ -415,6 +420,9 @@ if isfield(handles, 'data')
     %Refresh Slice Location information.
    updateSliceLocationText(handles.gui.textSliceLocation,...
         handles.data.imageCoreInfo.metadata, newSlicePosition);
+    
+    %Refresh slider value
+    set(handles.gui.slicer, 'Value', newSlicePosition);
 
     % Check show mask state
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
