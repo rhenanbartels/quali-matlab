@@ -85,8 +85,13 @@ function [sortedDicomMetadata, sortedImageMatrix, sortedIndexes] = ...
     nSlices = size(rawImageMatrix, 3);
     sliceLocations = zeros(1, nSlices);
     
-    for index = 1:nSlices
-        sliceLocations(index) = dicomMetadata{index}.SliceLocation;
+    % Check if metadata have SliceLocation
+    if isfield(dicomMetadata{1}, 'SliceLocation')
+        for index = 1:nSlices
+            sliceLocations(index) = dicomMetadata{index}.SliceLocation;
+        end
+    else
+        sliceLocations = 1:nSlices;
     end
     
     [~, sortedIndexes] = sort(sliceLocations);

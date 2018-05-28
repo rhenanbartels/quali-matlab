@@ -57,7 +57,7 @@ function mainFig = startMainInterface()
         'FontSize', 14,...
         'Callback', @openImage);
     
-        uicontrol('Parent', mainPanel,...
+    uicontrol('Parent', mainPanel,...
         'Units', 'Normalized',...
         'Position', [0.1, 0.2, 0.08, 0.6],...
         'String', 'Import Mask',...
@@ -68,6 +68,19 @@ function mainFig = startMainInterface()
         'Enable', 'Off',...
         'Tag', 'importMaskButton',...
         'Callback', @openMask);
+    
+    uicontrol('Parent', mainPanel,...
+        'Units', 'Normalized',...
+        'Position', [0.92, 0.6, 0.08, 0.25],...
+        'Style', 'Check',...
+        'String', 'Show Mask',...
+        'Fontsize', 14,....
+        'Fontweight', 'bold',...
+        'BackGroundColor', [0.1, 0.1, 0.1],...
+        'ForeGroundColor', [1, 1, 1],...
+        'Tag', 'showMaskCheck',...
+        'Enable', 'Off',...
+        'Callback', @showMask)
     
     %Start data handles
     handles.data = '';
@@ -201,6 +214,9 @@ function openMask(hObject, ~)
         handles.data.imageCoreInfo.masks = importMasks(rootPath);
         handles.data.lastVisitedFolder = rootPath;
         
+        % Enable show mask checkbox
+        set(handles.gui.showMaskCheck, 'Enable', 'On')
+        
         % Save imported mask
         guidata(hObject, handles)
         
@@ -216,12 +232,13 @@ function mouseMove(hObject, ~)
         refreshPixelPositionInfo(handles, imageAxes);
     end
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function showImageSlice(axisObject, imageSlice)
     axes(axisObject);
-    imagesc(imageSlice);
+    imshow(imageSlice);
     colormap(gray)
     set(axisObject, 'XtickLabel', [])
     set(axisObject, 'YtickLabel', [])
@@ -232,19 +249,24 @@ function updateSliceNumberText(textObject, sliceNumber, nSlices)
     set(textObject, 'String', sprintf('%d / %d', sliceNumber, nSlices));
 end
 
-function updateSliceLocationText(textObject, sliceLocation)
-    set(textObject, 'String', sprintf('Slice Location: %.2f',...
-        sliceLocation));
+function updateSliceLocationText(textObject, metadata,  sliceIndex)
+    if sliceIndex > 0
+        metadata = metadata{sliceIndex};
+    end
+    if isfield(metadata, 'SliceLocation')
+        set(textObject, 'String', sprintf('Slice Location: %.2f',...
+            sliceLocation));
+    end
 end
 
 function startScreenMetadata(handles, metadata)
     % Show Slice Number
     updateSliceNumberText(handles.gui.textSliceNumber, 1,...
         size(handles.data.imageCoreInfo.matrix, 3))
-    
+        
     updateSliceLocationText(handles.gui.textSliceLocation,...
-        metadata.SliceLocation)
-    
+        metadata, -1)
+        
     % Show Image Dimensions
     set(handles.gui.textImageDimensions, 'String',...
         sprintf('Image Dimension: %d x %d', metadata.Rows,...
@@ -298,8 +320,14 @@ end
 
 function newSlicePosition = getSlicePosition(slicePositionString, direction)
     tempSlicePosition = regexp(slicePositionString, '/', 'split');
+    
+    if nargin == 1
+        direction = NaN;
+    end
 
-    if direction > 0
+    if isnan(direction)
+        newSlicePosition = str2double(tempSlicePosition(1));
+    elseif direction > 0
         newSlicePosition = str2double(tempSlicePosition(1)) + 1;
     else
         newSlicePosition = str2double(tempSlicePosition(1)) - 1;
@@ -319,9 +347,13 @@ if isfield(handles, 'data')
     currentSlicePosition = get(handles.gui.textSliceNumber, 'String');
 
     %Get the new slice position based on the displayed values using regexp
-    newSlicePosition = getSlicePosition(currentSlicePosition,...
-        eventdata.VerticalScrollCount);
-
+    if isprop(eventdata, 'VerticalScrollCount')
+        newSlicePosition = getSlicePosition(currentSlicePosition,...
+            eventdata.VerticalScrollCount);
+    else
+        newSlicePosition = getSlicePosition(currentSlicePosition);
+    end
+       
     %Make sure that the slice number return to 1 if it is bigger than the
     %number of slices
     newSlicePosition = mod(newSlicePosition, nSlices);
@@ -346,11 +378,44 @@ if isfield(handles, 'data')
     refreshPixelPositionInfo(handles, handles.gui.imageAxes)
     
     %Refresh Slice Location information.
-    updateSliceLocationText(handles.gui.textSliceLocation,...
-        handles.data.imageCoreInfo.metadata{newSlicePosition}.SliceLocation);
+   updateSliceLocationText(handles.gui.textSliceLocation,...
+        handles.data.imageCoreInfo.metadata, newSlicePosition);
 
+    % Check show mask state
+    showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
+    if showMaskCheckState
+        createMaskOverlay(handles)
+    end
+    
     guidata(hObject, handles)
 end
+end
+
+function showMask(hObject, eventdata)
+    handles = guidata(hObject);
+    set(handles.gui.imageAxes, 'NextPlot', 'Replace')
+    showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
+    if showMaskCheckState
+        createMaskOverlay(handles)
+    else
+        refreshSlicePosition(hObject, eventdata)
+    end   
+end
+
+ function createMaskOverlay(handles)
+    slicePositionString = get(handles.gui.textSliceNumber, 'String');
+    currentSlicePosition = getSlicePosition(slicePositionString);
+    mask = handles.data.imageCoreInfo.masks(:, :, currentSlicePosition);
+    lungDim = size(mask, 1);
+    mask = mask >= 1;
+ 
+    color1 = 0; color2 = 0.8; color3 = 0;
+    colorMask = cat(3, color1 * ones(lungDim), color2 * ones(lungDim),...
+         color3 * ones(lungDim));
+    
+    hold on
+    h = imshow(colorMask);
+    set(h, 'AlphaData', mask);    
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             LOG FRAME                            
