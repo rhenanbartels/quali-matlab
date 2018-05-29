@@ -200,9 +200,15 @@ function openImage(hObject, ~)
             logFrame = createLogFrame();
             displayLog(logFrame, 'Importing Dicoms...', 0)
             
+             %Calculate Window Coefficients
+            [Rmin, Rmax] = windowCoeffAdj(handles.data.imageCoreInfo.matrix);
+            handles.data.Rmin = Rmin;
+            handles.data.Rmax = Rmax;
+            
             %Show first Slice
             showImageSlice(handles.gui.imageAxes,...
-                handles.data.imageCoreInfo.matrix(:, :, 1));
+                handles.data.imageCoreInfo.matrix(:, :, 1),...
+                handles.data.Rmin, handles.data.Rmax);
             
             startScreenMetadata(handles,...
                 handles.data.imageCoreInfo.metadata{1})
@@ -271,13 +277,13 @@ function startSlicer(slicerObject, imageCoreInfo)
         'Value', round(nSlices / 2));
 end
 
-function showImageSlice(axisObject, imageSlice)
+function showImageSlice(axisObject, imageSlice, Rmin, Rmax)
     axesChildren = get(axisObject, 'children');
     if ~isempty(axesChildren)
-        set(axesChildren, 'cdata', imageSlice);   
+        set(axesChildren, 'cdata', imageSlice);  
     else
         axes(axisObject)
-        imshow(imageSlice)
+        imshow(imageSlice, [Rmin, Rmax])
     end
     colormap(gray)
     set(axisObject, 'XtickLabel', [])
@@ -411,7 +417,8 @@ if ~isempty(handles.data)
         sprintf(slicePositionPlaceHolder, newSlicePosition, nSlices));
   
     showImageSlice(handles.gui.imageAxes,...
-        squeeze(handles.data.imageCoreInfo.matrix(:, :, newSlicePosition, :)));
+        squeeze(handles.data.imageCoreInfo.matrix(:, :, newSlicePosition, :)),...
+        handles.data.Rmin, handles.data.Rmax);
     
 
     %Refresh pixel value information.
@@ -459,7 +466,83 @@ end
     hold on
     h = imshow(colorMask);
     set(h, 'AlphaData', mask);    
+ end
+
+ function [Rmin, Rmax] = windowCoeffAdj(Img)
+ MinV = 0;
+ MaxV = max(Img(:));
+ LevV = (double( MaxV) + double(MinV)) / 2;
+ Win = double(MaxV) - double(MinV);
+ WLAdjCoe = (Win + 1)/1024;
+ FineTuneC = [1 1/16];    % Regular/Fine-tune mode coefficients
+ 
+ if isa(Img,'uint8')
+     MaxV = uint8(Inf);
+     MinV = uint8(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'uint16')
+     MaxV = uint16(Inf);
+     MinV = uint16(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'uint32')
+     MaxV = uint32(Inf);
+     MinV = uint32(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'uint64')
+     MaxV = uint64(Inf);
+     MinV = uint64(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'int8')
+     MaxV = int8(Inf);
+     MinV = int8(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'int16')
+     MaxV = int16(Inf);
+     MinV = int16(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'int32')
+     MaxV = int32(Inf);
+     MinV = int32(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'int64')
+     MaxV = int64(Inf);
+     MinV = int64(-Inf);
+     LevV = (double( MaxV) + double(MinV)) / 2;
+     Win = double(MaxV) - double(MinV);
+     WLAdjCoe = (Win + 1)/1024;
+ elseif isa(Img,'logical')
+     MaxV = 0;
+     MinV = 1;
+     LevV =0.5;
+     Win = 1;
+     WLAdjCoe = 0.1;
+ end    
+
+ [Rmin, Rmax] = WL2R(Win, LevV);
+ end
+ 
+ function [Rmn Rmx] = WL2R(W,L)
+    Rmn = L - (W/2);
+    Rmx = L + (W/2);
+    if (Rmn >= Rmx)
+        Rmx = Rmn + 1;
+    end
 end
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             LOG FRAME                            
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
