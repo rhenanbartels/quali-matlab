@@ -19,6 +19,10 @@ function imageCoreInfo =  importDicoms(imagePath)
         [sortedDicomMetadata, sortedImageMatrix, sortedIndexes] = ...
             sortSlices(dicomMetadata, rawImageMatrix);
         
+        %Prepare image
+        sortedImageMatrix = scalePixels(dicomMetadata{1},...
+            sortedImageMatrix);
+        
         imageCoreInfo.fileNames = dicomFileNames;
         imageCoreInfo.metadata = sortedDicomMetadata;
         imageCoreInfo.matrix = sortedImageMatrix;
@@ -35,6 +39,7 @@ function rawImageMatrix = getDicomImages(dicomFileNames, dicomMetadata)
     for index = 1:nDicoms
         rawImageMatrix(:, :, index) =  dicomread(dicomFileNames{index});
     end
+    
 end
 
 function [dicomFileNames, dicomMetadata] = getDicomFileNames(imagePath, folderElements)
@@ -97,4 +102,14 @@ function [sortedDicomMetadata, sortedImageMatrix, sortedIndexes] = ...
     [~, sortedIndexes] = sort(sliceLocations);
     sortedDicomMetadata = dicomMetadata(sortedIndexes);
     sortedImageMatrix = rawImageMatrix(:, :, sortedIndexes);
+end
+
+function imageMatrix = scalePixels(metadata, imageMatrix)
+    if isfield(metadata, 'RescaleSlope') &&...
+            isfield(metadata, 'RescaleIntercept')
+        slope = metadata.RescaleSlope;
+        intercept = metadata.RescaleIntercept;
+        imageMatrix = imageMatrix * slope + intercept;
+    end
+    imageMatrix = int16(imageMatrix);
 end
