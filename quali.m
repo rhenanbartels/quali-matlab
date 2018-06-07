@@ -176,6 +176,12 @@ function moveSlicer(hObject, ~)
     axesChildren = get(handles.gui.imageAxes,'children');
     set(axesChildren,'cdata',...
         squeeze(imageMatrix(:, :, currentSlicePosition, :)))
+        
+    % Check show mask state
+    showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
+    if showMaskCheckState
+        createMaskOverlay(handles)
+    end
     
     updateSliceNumberText(handles.gui.textSliceNumber,...
         currentSlicePosition, nSlices)
@@ -459,13 +465,38 @@ end
     lungDim = size(mask, 1);
     mask = mask >= 1;
  
-    color1 = 0; color2 = 0.8; color3 = 0;
-    colorMask = cat(3, color1 * ones(lungDim), color2 * ones(lungDim),...
-         color3 * ones(lungDim));
     
+    overlayColor = [0 1 0];
+    defaultOpacity = 0.5;
+
+%     switch overlayColor
+%         case {'y','yellow'}
+%             overlayColor = [1 1 0];
+%         case {'m','magenta'}
+%             overlayColor = [1 0 1];
+%         case {'c','cyan'}
+%             overlayColor = [0 1 1];
+%         case {'r','red'}
+%             overlayColor = [1 0 0];
+%         case {'g','green'}
+%             overlayColor = [0 1 0];
+%         case {'b','blue'}
+%             overlayColor = [0 0 1];
+%         case {'w','white'}
+%             overlayColor = [1 1 1];            
+%         case {'k','black'}
+%             overlayColor = [0 0 0];
+%     end
+    
+    colorMask = cat(3, overlayColor(1) * ones(lungDim),...
+        overlayColor(2) * ones(lungDim),...
+        overlayColor(3) * ones(lungDim));
+
+
     hold on
     h = imshow(colorMask);
-    set(h, 'AlphaData', mask);    
+    set(h, 'AlphaData', mask * defaultOpacity, 'tag', 'maskOverlay');   
+    hold off
  end
 
  function [Rmin, Rmax] = windowCoeffAdj(Img)
