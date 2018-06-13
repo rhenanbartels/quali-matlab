@@ -209,18 +209,19 @@ function openImage(hObject, ~)
              %Calculate Window Coefficients
             [Rmin, Rmax] = windowCoeffAdj(handles.data.imageCoreInfo.matrix);
             handles.data.Rmin = Rmin;
-            handles.data.Rmax = Rmax;
-            
 
-            
+            handles.data.Rmax = Rmax;
             % Save imported data
-            guidata(hObject, handles)            
-                        
+            guidata(hObject, handles)
+
+            % Close log frame
+            close(logFrame)
+  
             % Enable controls
             set(handles.gui.importMaskButton, 'Enable', 'On')
             firstPosition = startSlicer(handles.gui.slicer,...
                 handles.data.imageCoreInfo);
-            
+
             %Show first Slice
             showImageSlice(handles.gui.imageAxes,...
                 handles.data.imageCoreInfo.matrix(:, :, firstPosition),...
@@ -230,9 +231,6 @@ function openImage(hObject, ~)
             startScreenMetadata(handles,...
                 handles.data.imageCoreInfo.metadata{1},...
                 firstPosition)
-            
-            % Close log frame
-            close(logFrame)
         end
         
     end
@@ -256,14 +254,14 @@ function openMask(hObject, ~)
         rootPath = [pathName fileName];
         handles.data.imageCoreInfo.masks = importMasks(rootPath);
         handles.data.lastVisitedFolder = rootPath;
+               
+        close(logFrame);
         
         % Enable show mask checkbox
         set(handles.gui.showMaskCheck, 'Enable', 'On')
         
         % Save imported mask
         guidata(hObject, handles)
-        
-        close(logFrame);
     end
     
 end
@@ -594,6 +592,7 @@ function figObject = createLogFrame()
         'Color', 'black',...
         'Name', 'Log',...
         'NumberTitle', 'Off',...
+        'WindowStyle', 'Modal',...
         'Resize', 'Off');
 end
 
