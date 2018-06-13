@@ -295,7 +295,7 @@ function updateSliceLocationText(textObject, metadata,  sliceIndex)
     end
     if isfield(metadata, 'SliceLocation')
         set(textObject, 'String', sprintf('Slice Location: %.2f',...
-            metadata.sliceLocation));
+            metadata.SliceLocation));
     end
 end
 
