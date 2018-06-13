@@ -482,7 +482,7 @@ end
         overlayColor(2) * ones(lungDim),...
         overlayColor(3) * ones(lungDim));
 
-
+    delete(findobj(handles.gui.imageAxes, 'Tag', 'maskOverlay'))
     hold on
     h = imshow(colorMask);
     set(h, 'AlphaData', mask * defaultOpacity, 'tag', 'maskOverlay');   
