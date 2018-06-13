@@ -454,6 +454,8 @@ function showMask(hObject, eventdata)
     if showMaskCheckState
         createMaskOverlay(handles)
     else
+        % Delete maskOverlay object to make navigation faster
+        delete(findobj(handles.gui.imageAxes, 'Tag', 'maskOverlay'))
         refreshSlicePosition(hObject, eventdata)
     end   
 end
