@@ -211,20 +211,25 @@ function openImage(hObject, ~)
             handles.data.Rmin = Rmin;
             handles.data.Rmax = Rmax;
             
-            %Show first Slice
-            showImageSlice(handles.gui.imageAxes,...
-                handles.data.imageCoreInfo.matrix(:, :, 1),...
-                handles.data.Rmin, handles.data.Rmax);
-            
-            startScreenMetadata(handles,...
-                handles.data.imageCoreInfo.metadata{1})
+
             
             % Save imported data
             guidata(hObject, handles)            
                         
             % Enable controls
             set(handles.gui.importMaskButton, 'Enable', 'On')
-            startSlicer(handles.gui.slicer, handles.data.imageCoreInfo)
+            firstPosition = startSlicer(handles.gui.slicer,...
+                handles.data.imageCoreInfo);
+            
+            %Show first Slice
+            showImageSlice(handles.gui.imageAxes,...
+                handles.data.imageCoreInfo.matrix(:, :, firstPosition),...
+                handles.data.Rmin, handles.data.Rmax);
+            
+            % Show metadata on the screen
+            startScreenMetadata(handles,...
+                handles.data.imageCoreInfo.metadata{1},...
+                firstPosition)
             
             % Close log frame
             close(logFrame)
@@ -274,13 +279,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function startSlicer(slicerObject, imageCoreInfo)
+function firstPosition = startSlicer(slicerObject, imageCoreInfo)
     nSlices = size(imageCoreInfo.matrix, 3);
+    firstPosition = round(nSlices / 2);
     set(slicerObject, 'Visible', 'On',...
         'Min', 1,...
         'Max', nSlices,...
         'SliderStep', [1  / (nSlices - 1) 10 / (nSlices - 1)],...
-        'Value', round(nSlices / 2));
+        'Value', firstPosition);
 end
 
 function showImageSlice(axisObject, imageSlice, Rmin, Rmax)
@@ -311,9 +317,9 @@ function updateSliceLocationText(textObject, metadata,  sliceIndex)
     end
 end
 
-function startScreenMetadata(handles, metadata)
+function startScreenMetadata(handles, metadata, firstPosition)
     % Show Slice Number
-    updateSliceNumberText(handles.gui.textSliceNumber, 1,...
+    updateSliceNumberText(handles.gui.textSliceNumber, firstPosition,...
         size(handles.data.imageCoreInfo.matrix, 3))
         
     updateSliceLocationText(handles.gui.textSliceLocation,...
