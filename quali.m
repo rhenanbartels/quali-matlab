@@ -67,8 +67,18 @@ function mainFig = startMainInterface()
        'Backgroundcolor', [0.1, 0.1, 0.1],...
        'Fontsize', 13,...
        'Horizontalalignment', 'Center',...
-       'String', 'Processing...');
+       'String', 'Ready!',...
+       'Tag', 'statusText');
     
+      uicontrol('Parent', statusPanel,...
+       'Units', 'Normalized',...
+       'Position', [0.05, 0.4, 0.05, 0.2],...
+       'Style', 'Text',...
+       'Fontsize', 13,...
+       'Backgroundcolor', 'g',...
+       'String', '',...
+       'Tag', 'statusLight');
+   
 %   informationAxes = axes('Parent', mainFig,...
 %       'Units', 'Normalized',...
 %       'Position', [0, 0.06, 1, 0.85],...
@@ -351,6 +361,8 @@ function openImage(hObject, ~)
     end
     
     if rootPath
+        displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+            'Importing Dicoms...')
         handles.data.lastVisitedFolder = rootPath;
         handles.data.imageCoreInfo = importDicoms(rootPath);
         
@@ -384,6 +396,10 @@ function openImage(hObject, ~)
             startScreenMetadata(handles,...
                 handles.data.imageCoreInfo.metadata{1},...
                 firstPosition)
+            
+            % Set status to ready
+            displayStatus(handles.gui.statusText, handles.gui.statusLight)
+            
         end
         
     end
@@ -400,21 +416,22 @@ function openMask(hObject, ~)
             'Select the file containing the masks');
     end
     
-    if ~isempty(fileName)
-        logFrame = createLogFrame();
-        displayLog(logFrame, 'Importing masks...', 0)
+    if ~isempty(fileName)        
+        displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+            'Importing masks...')
         
         rootPath = [pathName fileName];
         handles.data.imageCoreInfo.masks = importMasks(rootPath);
         handles.data.lastVisitedFolder = rootPath;
-               
-        close(logFrame);
-        
+
         % Enable show mask checkbox
         set(handles.gui.showMaskCheck, 'Enable', 'On')
         
         % Save imported mask
         guidata(hObject, handles)
+        
+        % Set status to ready!
+        displayStatus(handles.gui.statusText, handles.gui.statusLight)
     end
     
 end
@@ -734,31 +751,16 @@ end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%                             LOG FRAME                            
+%                                 LOG                           
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function figObject = createLogFrame()
-    %disply calculation log.
-    figObject = figure('Units', 'Normalized',...
-        'Position', [0.3, 0.4, 0.4, 0.2],...
-        'Toolbar', 'None',...
-        'Menubar', 'None',...
-        'Color', 'black',...
-        'Name', 'Log',...
-        'NumberTitle', 'Off',...
-        'WindowStyle', 'Modal',...
-        'Resize', 'Off');
-end
+function displayStatus(statusText, statusLight, msg)
 
-function displayLog(figObj, msg, clearAxes)
-   if clearAxes
-       cla
-   else
-       ax = axes('Parent', figObj, 'Visible', 'Off');
-       axes(ax)
+    if nargin == 2
+        set(statusText, 'String', 'Ready!')
+        set(statusLight, 'Backgroundcolor', 'g');
+    else        
+        set(statusText, 'String', msg)
+        set(statusLight, 'Backgroundcolor', 'r');
     end
-
-    text(0.5, 0.5, msg, 'Color', 'white', 'HorizontalAlignment',...
-    'center', 'FontSize', 14)
-
     drawnow
 end
