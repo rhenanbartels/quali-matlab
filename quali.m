@@ -349,42 +349,43 @@ function moveSlicer(hObject, ~)
     updateSliceNumberText(handles.gui.textSliceNumber,...
         currentSlicePosition, nSlices)
     
-   %Refresh Slice Location information.
-   updateSliceLocationText(handles.gui.textSliceLocation,...
+    %Refresh Slice Location information.
+    updateSliceLocationText(handles.gui.textSliceLocation,...
         handles.data.imageCoreInfo.metadata, currentSlicePosition)
 end
 
 function openImage(hObject, ~)
-    % Import Images
-    handles = guidata(hObject);
-    if isfield(handles.data, 'lastVisitedFolder')
-        rootPath = uigetdir(handles.data.lastVisitedFolder,...
-            'Select a folder with Dicom images');
-    else
-        rootPath = uigetdir('.', 'Select a folder with Dicom images');
-    end
-    
-    if rootPath
+% Import Images
+handles = guidata(hObject);
+if isfield(handles.data, 'lastVisitedFolder')
+    rootPath = uigetdir(handles.data.lastVisitedFolder,...
+        'Select a folder with Dicom images');
+else
+    rootPath = uigetdir('.', 'Select a folder with Dicom images');
+end
+
+if rootPath    
+    try
         displayStatus(handles.gui.statusText, handles.gui.statusLight,...
             'Importing Dicoms...')
         handles.data.lastVisitedFolder = rootPath;
         handles.data.imageCoreInfo = importDicoms(rootPath);
         
         % Check if any image was found
-        if ~isempty(handles.data.imageCoreInfo)               
-             %Calculate Window Coefficients
+        if ~isempty(handles.data.imageCoreInfo)
+            %Calculate Window Coefficients
             [Rmin, Rmax] = windowCoeffAdj(handles.data.imageCoreInfo.matrix);
             handles.data.Rmin = Rmin;
-
+            
             handles.data.Rmax = Rmax;
             % Save imported data
             guidata(hObject, handles)
-
+            
             % Enable controls
             set(handles.gui.importMaskButton, 'Enable', 'On')
             firstPosition = startSlicer(handles.gui.slicer,...
                 handles.data.imageCoreInfo);
-
+            
             %Show first Slice
             showImageSlice(handles.gui.imageAxes,...
                 handles.data.imageCoreInfo.matrix(:, :, firstPosition),...
@@ -395,12 +396,13 @@ function openImage(hObject, ~)
                 handles.data.imageCoreInfo.metadata{1},...
                 firstPosition)
             
-            % Set status to ready
-            displayStatus(handles.gui.statusText, handles.gui.statusLight)
-            
         end
-        
+    catch errorObj
+        errordlg(errorObj.message, 'Import error')
     end
+    % Set status to ready
+    displayStatus(handles.gui.statusText, handles.gui.statusLight)
+end
 end
 
 function openMask(hObject, ~)
@@ -414,24 +416,29 @@ function openMask(hObject, ~)
             'Select the file containing the masks');
     end
     
-    if ~isempty(fileName)        
-        displayStatus(handles.gui.statusText, handles.gui.statusLight,...
-            'Importing masks...')
-        
-        rootPath = [pathName fileName];
-        handles.data.imageCoreInfo.masks = importMasks(rootPath);
-        handles.data.lastVisitedFolder = rootPath;
-
-        % Enable show mask checkbox
-        set(handles.gui.showMaskCheck, 'Enable', 'On')
-        
-        % Save imported mask
-        guidata(hObject, handles)
-        
-        % Set status to ready!
-        displayStatus(handles.gui.statusText, handles.gui.statusLight)
+    if ~isempty(fileName)
+        try
+            displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+                'Importing masks...')
+            
+            rootPath = [pathName fileName];
+            handles.data.imageCoreInfo.masks = importMasks(rootPath);
+            handles.data.lastVisitedFolder = rootPath;
+            
+            % Enable show mask checkbox
+            set(handles.gui.showMaskCheck, 'Enable', 'On')
+            
+            % Save imported mask
+            guidata(hObject, handles)
+            
+            
+            
+        catch errorObj
+            errordlg(errorObj.message, 'Import error');
+        end
     end
-    
+    % Set status to ready!
+    displayStatus(handles.gui.statusText, handles.gui.statusLight)
 end
 
 function mouseMove(hObject, ~)
