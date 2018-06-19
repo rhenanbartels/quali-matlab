@@ -231,6 +231,7 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Fontsize', 14,....
         'Fontweight', 'bold',...
         'Tag', 'buttonFlipImage',...
+        'Enable', 'Off',...
         'Callback', {@flipImageOrMask, 'image'}) 
     
     % Flip Mask
@@ -262,6 +263,7 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Fontsize', 14,....
         'Fontweight', 'bold',...
         'Tag', 'buttonFlipMask',...
+        'Enable', 'Off',...
         'Callback', {@flipImageOrMask, 'mask'})  
     
     uicontrol('Parent', imageOptionsPanel,...
@@ -632,6 +634,10 @@ if rootPath
             
             % Enable controls
             set(handles.gui.importMaskButton, 'Enable', 'On')
+            
+            % Enable image related widgets
+            set(handles.gui.buttonFlipImage, 'Enable', 'On');            
+            
             firstPosition = startSlider(handles.gui.slider,...
                 handles.data.imageCoreInfo);
             
@@ -649,6 +655,7 @@ if rootPath
     catch errorObj
         errordlg(errorObj.message, 'Import error')
     end
+    
     % Set status to ready
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
 end
@@ -675,12 +682,13 @@ function openMask(hObject, ~)
             handles.data.lastVisitedFolder = rootPath;
             
             % Enable show mask checkbox
-            set(handles.gui.showMaskCheck, 'Enable', 'On')
+            set(handles.gui.showMaskCheck, 'Enable', 'On')            
+            
+            % Enable image related widgets
+            set(handles.gui.buttonFlipMask, 'Enable', 'On');
             
             % Save imported mask
-            guidata(hObject, handles)
-            
-            
+            guidata(hObject, handles)           
             
         catch errorObj
             errordlg(errorObj.message, 'Import error');
