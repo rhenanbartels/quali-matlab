@@ -230,7 +230,8 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'String', 'Flip',...
         'Fontsize', 14,....
         'Fontweight', 'bold',...
-        'Tag', 'buttonFlipImage') 
+        'Tag', 'buttonFlipImage',...
+        'Callback', {@flipImageOrMask, 'image'}) 
     
     % Flip Mask
     uicontrol('Parent', imageOptionsPanel,...
@@ -260,7 +261,8 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'String', 'Flip',...
         'Fontsize', 14,....
         'Fontweight', 'bold',...
-        'Tag', 'buttonFlipMask')  
+        'Tag', 'buttonFlipMask',...
+        'Callback', {@flipImageOrMask, 'mask'})  
     
     uicontrol('Parent', imageOptionsPanel,...
         'Units', 'Normalized',...
@@ -534,6 +536,45 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function flipImageOrMask(hObject, eventdata, imageOrMask)
+    handles = guidata(hObject);
+    
+    dim.z = 3;
+    dim.y = 2;
+    dim.x = 1;    
+    
+    options = get(handles.gui.popFlipImage, 'String');
+        
+    currentPosition = getSlicePosition(get(handles.gui.textSliceNumber,...
+        'String'), NaN);
+    
+    switch imageOrMask
+        case 'image'            
+            % Get dimension to flip.
+            dimension = getfield(dim,...
+                options{get(handles.gui.popFlipImage, 'Value')});            
+            handles.data.imageCoreInfo.matrix = flip(...
+                handles.data.imageCoreInfo.matrix, dimension);            
+            showImageSlice(handles.gui.imageAxes,...
+                handles.data.imageCoreInfo.matrix(:, :, currentPosition),...
+                handles.data.Rmin, handles.data.Rmax);               
+        otherwise  
+            % Get dimension to flip.
+            dimension = getfield(dim,...
+                options{get(handles.gui.popFlipMask, 'Value')});
+            handles.data.imageCoreInfo.masks = flip(...
+                handles.data.imageCoreInfo.masks, dimension);            
+    end    
+    
+    if get(handles.gui.showMaskCheck, 'Value')
+        createMaskOverlay(handles,...
+            handles.data.imageCoreInfo.masks(:, :, currentPosition))
+    end
+        
+    guidata(hObject, handles)
+end
+
+
 function moveSlider(hObject, ~)
     %TODO: Check mask overlay movement with slider
     handles = guidata(hObject);
@@ -550,7 +591,8 @@ function moveSlider(hObject, ~)
     % Check show mask state
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
     if showMaskCheckState
-        createMaskOverlay(handles)
+        createMaskOverlay(handles,...
+            handles.data.imageCoreInfo.masks(:, :, currentSlicePosition))
     end
     
     updateSliceNumberText(handles.gui.textSliceNumber,...
@@ -843,7 +885,8 @@ if ~isempty(handles.data)
     % Check show mask state
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
     if showMaskCheckState
-        createMaskOverlay(handles)
+        createMaskOverlay(handles, handles.data.imageCoreInfo.masks(:, :,...
+            newSlicePosition))
     end
     
     guidata(hObject, handles)
@@ -854,8 +897,12 @@ function showMask(hObject, eventdata)
     handles = guidata(hObject);
     set(handles.gui.imageAxes, 'NextPlot', 'Replace')
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
+    
     if showMaskCheckState
-        createMaskOverlay(handles)
+        slicePositionString = get(handles.gui.textSliceNumber, 'String');
+        currentSlicePosition = getSlicePosition(slicePositionString);
+        mask = handles.data.imageCoreInfo.masks(:, :, currentSlicePosition);
+        createMaskOverlay(handles, mask)
     else
         % Delete maskOverlay object to make navigation faster
         delete(findobj(handles.gui.imageAxes, 'Tag', 'maskOverlay'))
@@ -863,10 +910,7 @@ function showMask(hObject, eventdata)
     end   
 end
 
- function createMaskOverlay(handles)
-    slicePositionString = get(handles.gui.textSliceNumber, 'String');
-    currentSlicePosition = getSlicePosition(slicePositionString);
-    mask = handles.data.imageCoreInfo.masks(:, :, currentSlicePosition);
+ function createMaskOverlay(handles, mask)
     lungDim = size(mask, 1);
     mask = mask >= 1;
  
