@@ -359,7 +359,9 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Fontsize', 14,...
         'Backgroundcolor', bckColor,...
         'Foregroundcolor', [1, 1, 1],...
-        'Value', 1);
+        'Value', 1,...
+        'Tag', 'transversalOption',...
+        'Callback', @changeOrientation);
     
     uicontrol('Parent', orientationGroup,...
         'Units', 'Normalized',...
@@ -369,7 +371,9 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Fontsize', 14,...
         'Backgroundcolor', bckColor,...
         'Foregroundcolor', [1, 1, 1],...
-        'Value', 0);
+        'Value', 0,...
+        'Tag', 'sagittalOption',...
+        'Callback', @changeOrientation);
        
      uicontrol('Parent', orientationGroup,...
         'Units', 'Normalized',...
@@ -379,7 +383,9 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Fontsize', 14,...
         'Backgroundcolor', bckColor,...
         'Foregroundcolor', [1, 1, 1],...
-        'Value', 0);
+        'Value', 0,...
+        'Tag', 'coronalOption',...
+        'Callback', @changeOrientation);
          
      uicontrol('Parent', imageOptionsPanel,...
         'Units', 'Normalized',...
@@ -628,6 +634,65 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function changeOrientation(hObject, eventdata)
+    handles = guidata(hObject);
+    
+    orientation = getOrientationName(...,
+        handles.gui.transversalOption,...
+        handles.gui.sagittalOption);
+
+    switch orientation
+        case 'transversal'
+            [handles, currentPosition, nSlices] = rotateTransversal(handles);
+        case 'sagittal'
+            [handles, currentPosition, nSlices] = rotateSagittal(handles);
+        otherwise 
+            [handles, currentPosition, nSlices] = rotateCoronal(handles);
+    end
+    
+   handles.data.orientation = orientation; 
+   handles.data.imageCoreInfo.nSlices = nSlices;
+    
+  updateSliceNumberText(handles.gui.textSliceNumber,...
+        currentPosition, nSlices)
+    
+   firstPosition = startSlider(handles.gui.slider,...
+        handles.data.imageCoreInfo.nSlices);
+    
+   aspect = calculateDAspect(handles.gui.transversalOption,...
+        handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+        handles.data.imageCoreInfo.metadata{2});
+    
+   imageSlice = squeeze(handles.data.imageCoreInfo.matrix(:, :,...
+        currentPosition, :));
+        
+    showImageSlice(handles.gui.imageAxes,...
+        imageSlice, handles.data.Rmin, handles.data.Rmax,...
+        aspect);
+    
+    guidata(hObject, handles)
+end
+
+function [handles, currentPosition, nSlices] = rotateTransversal(handles)
+    handles.data.imageCoreInfo.matrix = handles.data.imageCoreInfo.matrixTransversal;
+    nSlices = handles.data.imageCoreInfo.sizeTransversal;
+    currentPosition = round(nSlices / 2);
+end
+
+
+function [handles, currentPosition, nSlices] = rotateSagittal(handles)
+    handles.data.imageCoreInfo.matrix = handles.data.imageCoreInfo.matrixSagittal;
+    nSlices = handles.data.imageCoreInfo.sizeSagittal;
+    currentPosition = round(nSlices / 2);
+end
+
+function [handles, currentPosition, nSlices] = rotateCoronal(handles)
+    handles.data.imageCoreInfo.matrix = handles.data.imageCoreInfo.matrixCoronal;
+    nSlices = handles.data.imageCoreInfo.sizeCoronal;
+    currentPosition = round(nSlices/ 2);
+end
+
 function updateWindowMin(hObject, eventdata)
     handles = guidata(hObject);
     windowWidth = get(handles.gui.sliderWindowWidth, 'Value');
@@ -702,10 +767,18 @@ function flipImageOrMask(hObject, eventdata, imageOrMask)
             dimension = getfield(dim,...
                 options{get(handles.gui.popFlipImage, 'Value')});            
             handles.data.imageCoreInfo.matrix = flip(...
-                handles.data.imageCoreInfo.matrix, dimension);            
+                handles.data.imageCoreInfo.matrix, dimension);   
+            
+           aspect = calculateDAspect(handles.gui.transversalOption,...
+            handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+            handles.data.imageCoreInfo.metadata{2});
+            
+            imageSlice = squeeze(handles.data.imageCoreInfo.matrix(:, :,...
+                currentPosition, :));
+            
             showImageSlice(handles.gui.imageAxes,...
-                handles.data.imageCoreInfo.matrix(:, :, currentPosition),...
-                handles.data.Rmin, handles.data.Rmax);               
+                imageSlice, handles.data.Rmin, handles.data.Rmax,...
+                aspect);               
         otherwise  
             % Get dimension to flip.
             dimension = getfield(dim,...
@@ -730,9 +803,15 @@ function moveSlider(hObject, ~)
     
     currentSlicePosition = round(get(handles.gui.slider, 'Value'));
     
-    axesChildren = get(handles.gui.imageAxes,'children');
-    set(axesChildren,'cdata',...
-        squeeze(imageMatrix(:, :, currentSlicePosition, :)))
+    aspect = calculateDAspect(handles.gui.transversalOption,...
+        handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+        handles.data.imageCoreInfo.metadata{2});
+    
+    imageSlice = squeeze(handles.data.imageCoreInfo.matrix(:, :,...
+                currentSlicePosition, :));
+    
+    showImageSlice(handles.gui.imageAxes, imageSlice,...
+       handles.data.Rmin, handles.data.Rmax, aspect);   
     
     % TODO: Check if mask exists
     % Check show mask state
@@ -747,7 +826,8 @@ function moveSlider(hObject, ~)
     
     %Refresh Slice Location information.
     updateSliceLocationText(handles.gui.textSliceLocation,...
-        handles.data.imageCoreInfo.metadata, currentSlicePosition)
+        handles.data.imageCoreInfo.metadata, currentSlicePosition,...
+        handles.data.orientation)
 end
 
 function openImage(hObject, ~)
@@ -768,10 +848,27 @@ if rootPath
         handles.data.imageCoreInfo = importDicoms(rootPath);
         
         % Check if any image was found
-        if ~isempty(handles.data.imageCoreInfo)
+        if ~isempty(handles.data.imageCoreInfo)            
+            
+            % Start Image State
+            handles = startImageState(handles);
             
             % Start Screen Objects
             handles = startImageScreen(handles);
+            
+            % Get Tranversal, Sagittal and Coronal Orientation
+            [matrixSagittal, matrixCoronal] = getOrientations(...,
+                handles.data.imageCoreInfo.matrix);
+            
+            handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
+            handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
+            handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
+            
+            imageSize = size(handles.data.imageCoreInfo.matrix);
+            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
+            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
+            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
+            handles.data.imageCoreInfo.nSlices = imageSize(3);
             
             % Save imported data
             guidata(hObject, handles)            
@@ -813,12 +910,32 @@ function openMatFile(hObject, ~)
             handles.data.imageCoreInfo.fileNames = {};
             handles.data.imageCoreInfo.metadata = matFile.allResults.structure.metadata;
             handles.data.imageCoreInfo.sortedIndexes = {};
+                        
+            % TODO: Create separated function for these
+            imageSize = size(handles.data.imageCoreInfo.matrix);
+            
+            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
+            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
+            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
+            handles.data.imageCoreInfo.nSlices = imageSize(3);
             
             handles.data.imageCoreInfo.masks = matFile.allResults.structure.lungMask;
             
+            % Start Image State
+            handles = startImageState(handles);
+            
             % Start Screen Objects
             handles = startImageScreen(handles);
-               
+            
+            % Get Sagittal and Coronal Orientation
+            % Get Tranversal, Sagittal and Coronal Orientation
+            [matrixSagittal, matrixCoronal] = getOrientations(...,
+                handles.data.imageCoreInfo.matrix);
+            
+            handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
+            handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
+            handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
+            
             % Save imported mask
             guidata(hObject, handles)
         catch errorObj
@@ -866,7 +983,7 @@ end
 
 function mouseMove(hObject, ~)
     handles = guidata(hObject);
-    if isfield(handles.data, 'imageCoreInfo')
+    if ~isempty(handles) && isfield(handles.data, 'imageCoreInfo')
         imageAxes = handles.gui.imageAxes;
         refreshPixelPositionInfo(handles, imageAxes);
     end
@@ -875,6 +992,46 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function aspect = calculateDAspect(transversal, sagittal, metadata_1, metadata_2)
+    orientation = getOrientationName(transversal, sagittal);
+    switch orientation
+        case 'transversal'
+            aspect = [1, 1, 1];
+        case 'sagittal'
+            diffSliceLoc = abs(metadata_1.SliceLocation - metadata_2.SliceLocation);
+            pixelSpacing = metadata_1.PixelSpacing(1);
+            aspect = [diffSliceLoc / pixelSpacing, 1, 1];
+        otherwise
+            diffSliceLoc = abs(metadata_1.SliceLocation - metadata_2.SliceLocation);
+            pixelSpacing = metadata_1.PixelSpacing(1);
+            aspect = [diffSliceLoc / pixelSpacing, 1, 1];
+    end
+end
+
+function orientation = getOrientationName(transversal, sagittal)
+    transversalValue = get(transversal, 'Value');
+    sagittalValue = get(sagittal, 'Value');
+    
+    if transversalValue
+        orientation = 'transversal';
+    elseif sagittalValue
+        orientation = 'sagittal';
+    else
+        orientation = 'coronal';
+    end
+end
+
+function [imageSagittal, imageCoronal] = getOrientations(imageMatrix)
+    imageSagittal = flip(permute(imageMatrix, [3 1 2 4]),1);
+    imageCoronal = flip(permute(imageMatrix, [3 2 1 4]), 1);
+end
+
+function handles = startImageState(handles)
+    if ~isfield(handles.data, 'orientation')
+        handles.data.orientation = 'transversal';
+    end
+end
 
 function handles = startImageScreen(handles)
 %Calculate Window Coefficients
@@ -906,13 +1063,24 @@ function handles = startImageScreen(handles)
     set(handles.gui.textWindowWL, 'Visible', 'On');
 
     firstPosition = startSlider(handles.gui.slider,...
-        handles.data.imageCoreInfo);
-
-    %Show first Slice
+        handles.data.imageCoreInfo.nSlices);
+    
+    %TODO: Create one function for these 3
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    aspect = calculateDAspect(handles.gui.transversalOption,...
+        handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+        handles.data.imageCoreInfo.metadata{2});
+    
+    imageSlice = squeeze(handles.data.imageCoreInfo.matrix(:, :,...
+                firstPosition, :));
+    
+     %Show first Slice
     showImageSlice(handles.gui.imageAxes,...
-        handles.data.imageCoreInfo.matrix(:, :, firstPosition),...
-        handles.data.Rmin, handles.data.Rmax);
-
+        imageSlice, handles.data.Rmin, handles.data.Rmax,...
+        aspect);        
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
     % Show metadata on the screen
     startScreenMetadata(handles,...
         handles.data.imageCoreInfo.metadata{1},...
@@ -936,8 +1104,7 @@ function updateWindowWidthLevel(textObject, Win, LevV)
         int16(Win), int16(LevV)))
 end
 
-function firstPosition = startSlider(sliderObject, imageCoreInfo)
-    nSlices = size(imageCoreInfo.matrix, 3);
+function firstPosition = startSlider(sliderObject, nSlices)
     firstPosition = round(nSlices / 2);
     set(sliderObject, 'Visible', 'On',...
         'Min', 1,...
@@ -946,7 +1113,7 @@ function firstPosition = startSlider(sliderObject, imageCoreInfo)
         'Value', firstPosition);
 end
 
-function showImageSlice(axisObject, imageSlice, Rmin, Rmax)
+function showImageSlice(axisObject, imageSlice, Rmin, Rmax, aspect)
     axesChildren = get(axisObject, 'children');
     if ~isempty(axesChildren)
         set(axesChildren, 'cdata', imageSlice);  
@@ -958,20 +1125,22 @@ function showImageSlice(axisObject, imageSlice, Rmin, Rmax)
     set(axisObject, 'XtickLabel', [])
     set(axisObject, 'YtickLabel', [])
     axis('tight')
-    
+    daspect(aspect);    
 end
 
 function updateSliceNumberText(textObject, sliceNumber, nSlices)
     set(textObject, 'String', sprintf('%d / %d', sliceNumber, nSlices));
 end
 
-function updateSliceLocationText(textObject, metadata,  sliceIndex)
-    if sliceIndex > 0
-        metadata = metadata{sliceIndex};
-    end
-    if isfield(metadata, 'SliceLocation')
-        set(textObject, 'String',...
-            sprintf('Slice Location: %.2f', metadata.SliceLocation));
+function updateSliceLocationText(textObject, metadata,  sliceIndex, orientation)
+    if strcmp(orientation, 'transversal')
+        if sliceIndex > 0
+          metadata = metadata{sliceIndex};
+        end
+        if isfield(metadata, 'SliceLocation')
+             set(textObject, 'String',...
+             sprintf('Slice Location: %.2f', metadata.SliceLocation));
+        end
     end
 end
 
@@ -1003,7 +1172,7 @@ function startScreenMetadata(handles, metadata, firstPosition, nSlices)
         size(handles.data.imageCoreInfo.matrix, 3))
         
     updateSliceLocationText(handles.gui.textSliceLocation,...
-        metadata, -1)
+        metadata, -1, handles.data.orientation)
         
     % Show Image Dimensions
     set(handles.gui.textImageDimensions, 'String',...
@@ -1125,7 +1294,7 @@ handles = guidata(hObject);
 
 if ~isempty(handles.data)
 
-    nSlices = size(handles.data.imageCoreInfo.matrix, 3);
+    nSlices = handles.data.imageCoreInfo.nSlices;
 
     currentSlicePosition = get(handles.gui.textSliceNumber, 'String');
 
@@ -1153,17 +1322,23 @@ if ~isempty(handles.data)
     set(handles.gui.textSliceNumber, 'String',...
         sprintf(slicePositionPlaceHolder, newSlicePosition, nSlices));
   
-    showImageSlice(handles.gui.imageAxes,...
-       squeeze(handles.data.imageCoreInfo.matrix(:, :, newSlicePosition, :)),...
-       handles.data.Rmin, handles.data.Rmax);
+    aspect = calculateDAspect(handles.gui.transversalOption,...
+        handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+        handles.data.imageCoreInfo.metadata{2});
     
+    imageSlice = squeeze(handles.data.imageCoreInfo.matrix(:, :,...
+        newSlicePosition, :));
+    
+    showImageSlice(handles.gui.imageAxes, imageSlice,...
+       handles.data.Rmin, handles.data.Rmax, aspect);    
 
     %Refresh pixel value information.
     refreshPixelPositionInfo(handles, handles.gui.imageAxes)
     
     %Refresh Slice Location information.
    updateSliceLocationText(handles.gui.textSliceLocation,...
-        handles.data.imageCoreInfo.metadata, newSlicePosition);
+        handles.data.imageCoreInfo.metadata, newSlicePosition,...
+        handles.data.orientation);
     
     %Refresh slider value
     set(handles.gui.slider, 'Value', newSlicePosition);
