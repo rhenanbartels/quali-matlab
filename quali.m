@@ -769,50 +769,12 @@ if rootPath
         
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)
-            %Calculate Window Coefficients
-            [Rmin, Rmax, Win, LevV] = windowCoeffAdj...
-                (handles.data.imageCoreInfo.matrix);
-            handles.data.Rmin = Rmin;
-            handles.data.Rmax = Rmax;
-            handles.data.Win = Win;
-            handles.data.LevV = LevV;
             
-            % Show window width and level
-            updateWindowWidthLevel(handles.gui.textWindowWL, Win, LevV)
-            % Update Window Width Text
-            set(handles.gui.editWindowWidth, 'String',...
-                num2str(round(Rmin)));            
-            % Update Window Level Text
-            set(handles.gui.editWindowLevel, 'String',...
-                num2str(round(Rmax)));
-            
-            %Prepare Window max and min sliders
-            startWindowWidthLevelSliders(handles,...
-                handles.data.imageCoreInfo.matrix, Win, LevV)
+            % Start Screen Objects
+            handles = startImageScreen(handles);
             
             % Save imported data
-            guidata(hObject, handles)
-            
-            % Enable controls
-            set(handles.gui.importMaskButton, 'Enable', 'On')
-            
-            % Enable image related widgets
-            set(handles.gui.buttonFlipImage, 'Enable', 'On');     
-            set(handles.gui.textWindowWL, 'Visible', 'On');
-            
-            firstPosition = startSlider(handles.gui.slider,...
-                handles.data.imageCoreInfo);
-            
-            %Show first Slice
-            showImageSlice(handles.gui.imageAxes,...
-                handles.data.imageCoreInfo.matrix(:, :, firstPosition),...
-                handles.data.Rmin, handles.data.Rmax);
-            
-            % Show metadata on the screen
-            startScreenMetadata(handles,...
-                handles.data.imageCoreInfo.metadata{1},...
-                firstPosition, size(handles.data.imageCoreInfo.matrix, 3))
-            
+            guidata(hObject, handles)            
         end
     catch errorObj
         errordlg(errorObj.message, 'Import error')
@@ -887,11 +849,8 @@ function openMask(hObject, ~)
             handles.data.imageCoreInfo.masks = importMasks(rootPath);
             handles.data.lastVisitedFolder = rootPath;
             
-            % Enable show mask checkbox
-            set(handles.gui.showMaskCheck, 'Enable', 'On')            
-            
-            % Enable image related widgets
-            set(handles.gui.buttonFlipMask, 'Enable', 'On');
+            % Enable mask widgets
+            manipulateMaskWidgets(handles, 'On')
             
             % Save imported mask
             guidata(hObject, handles)           
@@ -916,6 +875,62 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = startImageScreen(handles)
+%Calculate Window Coefficients
+    [Rmin, Rmax, Win, LevV] = windowCoeffAdj...
+       (handles.data.imageCoreInfo.matrix);
+    handles.data.Rmin = Rmin;
+    handles.data.Rmax = Rmax;
+    handles.data.Win = Win;
+    handles.data.LevV = LevV;
+
+    % Show window width and level
+    updateWindowWidthLevel(handles.gui.textWindowWL, Win, LevV)
+    % Update Window Width Text
+    set(handles.gui.editWindowWidth, 'String',...
+        num2str(round(Rmin)));
+    % Update Window Level Text
+    set(handles.gui.editWindowLevel, 'String',...
+        num2str(round(Rmax)));
+
+    %Prepare Window max and min sliders
+    startWindowWidthLevelSliders(handles,...
+        handles.data.imageCoreInfo.matrix, Win, LevV)
+
+    % Enable controls
+    set(handles.gui.importMaskButton, 'Enable', 'On')
+
+    % Enable image related widgets
+    set(handles.gui.buttonFlipImage, 'Enable', 'On');
+    set(handles.gui.textWindowWL, 'Visible', 'On');
+
+    firstPosition = startSlider(handles.gui.slider,...
+        handles.data.imageCoreInfo);
+
+    %Show first Slice
+    showImageSlice(handles.gui.imageAxes,...
+        handles.data.imageCoreInfo.matrix(:, :, firstPosition),...
+        handles.data.Rmin, handles.data.Rmax);
+
+    % Show metadata on the screen
+    startScreenMetadata(handles,...
+        handles.data.imageCoreInfo.metadata{1},...
+        firstPosition, size(handles.data.imageCoreInfo.matrix, 3))
+
+    % Enable mask widgets
+    manipulateMaskWidgets(handles, 'On')
+end
+
+
+function manipulateMaskWidgets(handles, onOff)
+    % Enable show mask checkbox
+    set(handles.gui.showMaskCheck, 'Enable', onOff)
+
+    % Enable mask related widgets
+    set(handles.gui.buttonFlipMask, 'Enable', onOff);
+end
+
 function updateWindowWidthLevel(textObject, Win, LevV)
     set(textObject, 'String', sprintf('WW / WL: %d / %d',...
         int16(Win), int16(LevV)))
@@ -942,6 +957,7 @@ function showImageSlice(axisObject, imageSlice, Rmin, Rmax)
     colormap(gray)
     set(axisObject, 'XtickLabel', [])
     set(axisObject, 'YtickLabel', [])
+    axis('tight')
     
 end
 
