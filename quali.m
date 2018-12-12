@@ -147,6 +147,11 @@ function mainFig = startMainInterface()
         'Callback', @openImage);
     
     uimenu('Parent', importMenu,...
+        'Label', 'Mat File',...
+        'Tag', 'importMaskButton',...
+        'Callback', @openMatFile);
+    
+    uimenu('Parent', importMenu,...
         'Label', 'Mask',...
         'Tag', 'importMaskButton',...
         'Callback', @openMask);
@@ -815,7 +820,51 @@ if rootPath
     
     % Set status to ready
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
+    
+    % Disable Mask widgets
+    manipulateMaskWidgets(handles, 'Off')
 end
+end
+
+function openMatFile(hObject, ~)
+    handles = guidata(hObject);
+    if isfield(handles.data, 'lastVisitedFolder')
+        [fileName, pathName] = uigetfile('*.mat',...
+            'Select a mat file containg image information',...
+            handles.data.lastVisitedFolder);
+    else
+        [fileName, pathName] = uigetfile('*.mat',...
+            'Select a mat file containg image information');
+    end
+    
+    if ~isempty(fileName)
+        try
+            displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+                'Importing mat file...')            
+            
+            rootPath = [pathName fileName];
+            handles.data.lastVisitedFolder = rootPath;
+            
+            matFile = load(rootPath);
+            
+            handles.data.imageCoreInfo.matrix = matFile.allResults.structure.uncalibratedLung;
+            handles.data.imageCoreInfo.fileNames = {};
+            handles.data.imageCoreInfo.metadata = matFile.allResults.structure.metadata;
+            handles.data.imageCoreInfo.sortedIndexes = {};
+            
+            handles.data.imageCoreInfo.masks = matFile.allResults.structure.lungMask;
+            
+            % Start Screen Objects
+            handles = startImageScreen(handles);
+               
+            % Save imported mask
+            guidata(hObject, handles)
+        catch errorObj
+            errordlg(errorObj.message, 'Import error');
+        end
+    end
+    % Set status to ready!
+    displayStatus(handles.gui.statusText, handles.gui.statusLight)
 end
 
 function openMask(hObject, ~)
@@ -854,6 +903,7 @@ function openMask(hObject, ~)
     % Set status to ready!
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
 end
+
 
 function mouseMove(hObject, ~)
     handles = guidata(hObject);
