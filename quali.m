@@ -937,7 +937,12 @@ function openMatFile(hObject, ~)
             handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
             handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
             handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
-            handles.data.imageCoreInfo.nSlices = imageSize(3);
+            handles.data.imageCoreInfo.nSlices = imageSize(3);            
+                        
+            % Calculate Voxel Volume
+            handles.data.voxelVolume = calculateVoxelVolume(...
+                handles.data.imageCoreInfo.metadata{1},...
+                handles.data.imageCoreInfo.metadata{2});                  
             
             handles.data.imageCoreInfo.masks = matFile.allResults.structure.lungMask;
             
