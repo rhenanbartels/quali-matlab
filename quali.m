@@ -211,7 +211,8 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Horizontalalignment', 'Center',...
         'BackGroundColor', [0.2, 0.2, 0.2],...
         'ForeGroundColor', [1, 1, 1],...
-        'Tag', 'editWindowWidth')
+        'Tag', 'editWindowWidth',...
+        'Callback', @updateWindowLevelEdit)
     
      % Window Max
      uicontrol('Parent', imageOptionsPanel,...
@@ -246,7 +247,8 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Horizontalalignment', 'Center',...
         'BackGroundColor', [0.2, 0.2, 0.2],...
         'ForeGroundColor', [1, 1, 1],...
-        'Tag', 'editWindowLevel');
+        'Tag', 'editWindowLevel',...
+        'Callback', @updateWindowLevelEdit);
     
     uicontrol('Parent',imageOptionsPanel,...
         'Units', 'Normalized',...
@@ -635,6 +637,26 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+function updateWindowLevelEdit(hObject, eventdata)
+    handles = guidata(hObject);
+    windowWidth = str2double(get(handles.gui.editWindowWidth, 'String'));
+    windowLevel = str2double(get(handles.gui.editWindowLevel, 'String'));
+    
+    if (windowWidth < 1)
+        windowWidth = 1;
+    end
+   
+    [Rmin, Rmax] = WL2R(windowWidth,windowLevel);
+    
+    updateWindowWidthLevel(handles.gui.textWindowWL, windowWidth,...
+        windowLevel)
+    
+    set(handles.gui.sliderWindowWidth, 'Value', windowWidth);
+    set(handles.gui.sliderWindowLevel, 'Value', windowLevel);
+    
+    set(handles.gui.imageAxes, 'Clim', [Rmin, Rmax]);
+end
 
 function updateWindowLevelCallback(hObject, eventdata)
     handles = guidata(hObject);
