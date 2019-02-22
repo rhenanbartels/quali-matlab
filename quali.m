@@ -1022,6 +1022,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function voxelVolume = calculateVoxelVolume(metadata, metadata2)
+voxelVolume = NaN;
 if isfield(metadata,'SpacingBetweenSlices')
     if isfield(metadata,'SliceThickness')
         if abs(metadata.SpacingBetweenSlices) < metadata.SliceThickness
@@ -1050,10 +1051,12 @@ else
         SpacingBetweenSlices = abs(metadata2.SliceLocation -...
             metadata.SliceLocation);
     end
-
-    SliceThickness = metadata.SliceThickness;
-    voxelVolume = (metadata.PixelSpacing(1) ^ 2 * thick * 0.001) *...
-        (SpacingBetweenSlices / SliceThickness);
+    
+    if isfield(metadata, 'SliceThickness') && exist('SpacingBetweenSlices')
+        SliceThickness = metadata.SliceThickness;
+        voxelVolume = (metadata.PixelSpacing(1) ^ 2 * thick * 0.001) *...
+            (SpacingBetweenSlices / SliceThickness);
+    end
 end
 end
 
@@ -1235,8 +1238,12 @@ function startScreenMetadata(handles, metadata, firstPosition, nSlices)
     
     % Display Voxel Volume
     if isfield(handles.data, 'voxelVolume')
-        set(handles.gui.textVoxelVolume, 'String',...
-            sprintf('%.4fL', handles.data.voxelVolume))
+        if isnan(handles.data.voxelVolume)
+            set(handles.gui.textVoxelVolume, 'String','Not Available')
+        else
+            set(handles.gui.textVoxelVolume, 'String',...
+                sprintf('%.4fL', handles.data.voxelVolume))
+        end
     end
     
     %
