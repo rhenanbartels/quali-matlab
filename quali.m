@@ -678,6 +678,11 @@ function [handles, currentPosition, nSlices] = rotateTransversal(handles)
     handles.data.imageCoreInfo.matrix = handles.data.imageCoreInfo.matrixTransversal;
     nSlices = handles.data.imageCoreInfo.sizeTransversal;
     currentPosition = round(nSlices / 2);
+    
+    % Change mask orientation
+    if isfield(handles.data.imageCoreInfo, 'masks')
+        handles.data.imageCoreInfo.masks = handles.data.imageCoreInfo.masksTransversal;
+    end
 end
 
 
@@ -685,12 +690,22 @@ function [handles, currentPosition, nSlices] = rotateSagittal(handles)
     handles.data.imageCoreInfo.matrix = handles.data.imageCoreInfo.matrixSagittal;
     nSlices = handles.data.imageCoreInfo.sizeSagittal;
     currentPosition = round(nSlices / 2);
+    
+    % Change mask orientation
+    if isfield(handles.data.imageCoreInfo, 'masks')
+        handles.data.imageCoreInfo.masks = handles.data.imageCoreInfo.masksSagittal;
+    end
 end
 
 function [handles, currentPosition, nSlices] = rotateCoronal(handles)
     handles.data.imageCoreInfo.matrix = handles.data.imageCoreInfo.matrixCoronal;
     nSlices = handles.data.imageCoreInfo.sizeCoronal;
     currentPosition = round(nSlices/ 2);
+    
+        % Change mask orientation
+    if isfield(handles.data.imageCoreInfo, 'masks')
+        handles.data.imageCoreInfo.masks = handles.data.imageCoreInfo.masksCoronal;
+    end
 end
 
 function updateWindowMin(hObject, eventdata)
@@ -970,6 +985,14 @@ function openMask(hObject, ~)
             
             % Enable mask widgets
             manipulateMaskWidgets(handles, 'On')
+            
+            % Get Tranversal, Sagittal and Coronal Orientation
+            [masksSagittal, masksCoronal] = getOrientations(...,
+                handles.data.imageCoreInfo.masks);
+            
+            handles.data.imageCoreInfo.masksTransversal = handles.data.imageCoreInfo.masks;
+            handles.data.imageCoreInfo.masksSagittal = masksSagittal;
+            handles.data.imageCoreInfo.masksCoronal = masksCoronal;            
             
             % Save imported mask
             guidata(hObject, handles)           
@@ -1375,7 +1398,8 @@ function showMask(hObject, eventdata)
 end
 
  function createMaskOverlay(handles, mask)
-    lungDim = size(mask, 1);
+    nRows = size(mask, 1);
+    nCols = size(mask, 2);
     mask = mask >= 1;
  
     
@@ -1401,10 +1425,11 @@ end
 %             overlayColor = [0 0 0];
 %     end
     
-    colorMask = cat(3, overlayColor(1) * ones(lungDim),...
-        overlayColor(2) * ones(lungDim),...
-        overlayColor(3) * ones(lungDim));
-
+    colorMask = ones(nRows, nCols, 3);
+    colorMask(:, :, 1) = colorMask(:, :, 1) * overlayColor(1);
+    colorMask(:, :, 2) = colorMask(:, :, 3) * overlayColor(1);
+    colorMask(:, :, 3) = colorMask(:, :, 3) * overlayColor(1);
+    
     delete(findobj(handles.gui.imageAxes, 'Tag', 'maskOverlay'))
     hold on
     h = imshow(colorMask);
