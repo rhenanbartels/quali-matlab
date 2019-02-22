@@ -864,17 +864,8 @@ if rootPath
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)            
             
-            % Save Image size
-            imageSize = size(handles.data.imageCoreInfo.matrix);
-            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
-            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
-            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
-            handles.data.imageCoreInfo.nSlices = imageSize(3);
-            
-            % Calculate Voxel Volume
-            handles.data.voxelVolume = calculateVoxelVolume(...
-                handles.data.imageCoreInfo.metadata{1},...
-                handles.data.imageCoreInfo.metadata{2});           
+           
+            handles = prepareImageInformation(handles);  
             
             % Start Image State
             handles = startImageState(handles);
@@ -930,36 +921,24 @@ function openMatFile(hObject, ~)
             handles.data.imageCoreInfo.fileNames = {};
             handles.data.imageCoreInfo.metadata = matFile.allResults.structure.metadata;
             handles.data.imageCoreInfo.sortedIndexes = {};
-                        
-            % TODO: Create separated function for these
-            imageSize = size(handles.data.imageCoreInfo.matrix);
-            
-            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
-            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
-            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
-            handles.data.imageCoreInfo.nSlices = imageSize(3);            
-                        
-            % Calculate Voxel Volume
-            handles.data.voxelVolume = calculateVoxelVolume(...
-                handles.data.imageCoreInfo.metadata{1},...
-                handles.data.imageCoreInfo.metadata{2});                  
             
             handles.data.imageCoreInfo.masks = matFile.allResults.structure.lungMask;
+            
+            % Get Tranversal, Sagittal and Coronal Orientation
+            [masksSagittal, masksCoronal] = getOrientations(...,
+                handles.data.imageCoreInfo.masks);
+            
+            handles.data.imageCoreInfo.masksTransversal = handles.data.imageCoreInfo.masks;
+            handles.data.imageCoreInfo.masksSagittal = masksSagittal;
+            handles.data.imageCoreInfo.masksCoronal = masksCoronal;
+            
+            handles = prepareImageInformation(handles);           
             
             % Start Image State
             handles = startImageState(handles);
             
             % Start Screen Objects
             handles = startImageScreen(handles);
-            
-            % Get Sagittal and Coronal Orientation
-            % Get Tranversal, Sagittal and Coronal Orientation
-            [matrixSagittal, matrixCoronal] = getOrientations(...,
-                handles.data.imageCoreInfo.matrix);
-            
-            handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
-            handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
-            handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
             
             % Save imported mask
             guidata(hObject, handles)
@@ -970,6 +949,29 @@ function openMatFile(hObject, ~)
     % Set status to ready!
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
 end
+
+function handles = prepareImageInformation(handles)
+    imageSize = size(handles.data.imageCoreInfo.matrix);
+    handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
+    handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
+    handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
+    handles.data.imageCoreInfo.nSlices = imageSize(3);
+    
+    % Calculate Voxel Volume
+    handles.data.voxelVolume = calculateVoxelVolume(...
+        handles.data.imageCoreInfo.metadata{1},...
+        handles.data.imageCoreInfo.metadata{2});
+    
+    % Get Sagittal and Coronal Orientation
+    % Get Tranversal, Sagittal and Coronal Orientation
+    [matrixSagittal, matrixCoronal] = getOrientations(...,
+        handles.data.imageCoreInfo.matrix);
+    
+    handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
+    handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
+    handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
+end
+
 
 function openMask(hObject, ~)
     handles = guidata(hObject);
