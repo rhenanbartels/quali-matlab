@@ -705,7 +705,8 @@ function changeOrientation(hObject, eventdata)
     
     if get(handles.gui.showMaskCheck, 'Value')
         createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentPosition))
+            handles.data.imageCoreInfo.masks(:, :, currentPosition),...
+            aspect)
     end
     
     guidata(hObject, handles)
@@ -803,7 +804,8 @@ function flipImageOrMask(hObject, eventdata, imageOrMask)
     
     if get(handles.gui.showMaskCheck, 'Value')
         createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentPosition))
+            handles.data.imageCoreInfo.masks(:, :, currentPosition),...
+            aspect)
     end
         
     guidata(hObject, handles)
@@ -832,7 +834,8 @@ function moveSlider(hObject, ~)
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
     if showMaskCheckState
         createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentSlicePosition))
+            handles.data.imageCoreInfo.masks(:, :, currentSlicePosition),...
+            aspect)
     end
     
     updateSliceNumberText(handles.gui.textSliceNumber,...
@@ -864,13 +867,8 @@ if rootPath
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)            
             
-            % Save Image size
-            imageSize = size(handles.data.imageCoreInfo.matrix);
-            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
-            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
-            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
-            handles.data.imageCoreInfo.nSlices = imageSize(3);
-            
+           
+            handles = prepareImageInformation(handles);  
             
             % Start Image State
             handles = startImageState(handles);
@@ -926,31 +924,24 @@ function openMatFile(hObject, ~)
             handles.data.imageCoreInfo.fileNames = {};
             handles.data.imageCoreInfo.metadata = matFile.allResults.structure.metadata;
             handles.data.imageCoreInfo.sortedIndexes = {};
-                        
-            % TODO: Create separated function for these
-            imageSize = size(handles.data.imageCoreInfo.matrix);
-            
-            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
-            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
-            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
-            handles.data.imageCoreInfo.nSlices = imageSize(3);
             
             handles.data.imageCoreInfo.masks = matFile.allResults.structure.lungMask;
+            
+            % Get Tranversal, Sagittal and Coronal Orientation
+            [masksSagittal, masksCoronal] = getOrientations(...,
+                handles.data.imageCoreInfo.masks);
+            
+            handles.data.imageCoreInfo.masksTransversal = handles.data.imageCoreInfo.masks;
+            handles.data.imageCoreInfo.masksSagittal = masksSagittal;
+            handles.data.imageCoreInfo.masksCoronal = masksCoronal;
+            
+            handles = prepareImageInformation(handles);           
             
             % Start Image State
             handles = startImageState(handles);
             
             % Start Screen Objects
             handles = startImageScreen(handles);
-            
-            % Get Sagittal and Coronal Orientation
-            % Get Tranversal, Sagittal and Coronal Orientation
-            [matrixSagittal, matrixCoronal] = getOrientations(...,
-                handles.data.imageCoreInfo.matrix);
-            
-            handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
-            handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
-            handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
             
             % Save imported mask
             guidata(hObject, handles)
@@ -961,6 +952,29 @@ function openMatFile(hObject, ~)
     % Set status to ready!
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
 end
+
+function handles = prepareImageInformation(handles)
+    imageSize = size(handles.data.imageCoreInfo.matrix);
+    handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
+    handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
+    handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
+    handles.data.imageCoreInfo.nSlices = imageSize(3);
+    
+    % Calculate Voxel Volume
+    handles.data.voxelVolume = calculateVoxelVolume(...
+        handles.data.imageCoreInfo.metadata{1},...
+        handles.data.imageCoreInfo.metadata{2});
+    
+    % Get Sagittal and Coronal Orientation
+    % Get Tranversal, Sagittal and Coronal Orientation
+    [matrixSagittal, matrixCoronal] = getOrientations(...,
+        handles.data.imageCoreInfo.matrix);
+    
+    handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
+    handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
+    handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
+end
+
 
 function openMask(hObject, ~)
     handles = guidata(hObject);
@@ -1016,6 +1030,45 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function voxelVolume = calculateVoxelVolume(metadata, metadata2)
+voxelVolume = NaN;
+if isfield(metadata,'SpacingBetweenSlices')
+    if isfield(metadata,'SliceThickness')
+        if abs(metadata.SpacingBetweenSlices) < metadata.SliceThickness
+            voxelVolume =(metadata.PixelSpacing(1) ^ 2 *...
+                metadata.SliceThickness * 0.001) *...
+                (abs(metadata.SpacingBetweenSlices) / metadata.SliceThickness);
+        else
+            voxelVolume = (metadata.PixelSpacing(1) ^ 2 *...
+                metadata.SliceThickness * 0.001);
+        end
+    else
+        voxelVolume = (metadata.PixelSpacing(1) ^ 2 *...
+            metadata.SliceThickness * 0.001);
+    end
+else
+    
+    if isfield(metadata,'SliceThickness')==1;
+        thick=abs(metadata.SliceThickness);
+    elseif isfield(metadata,'SpacingBetweenSlices');
+        thick=abs(metadata.SpacingBetweenSlices);
+    else
+        thick=abs(metadata.PixelDimensions(3));
+    end
+    
+    if isfield(metadata, 'SliceLocation')
+        SpacingBetweenSlices = abs(metadata2.SliceLocation -...
+            metadata.SliceLocation);
+    end
+    
+    if isfield(metadata, 'SliceThickness') && exist('SpacingBetweenSlices')
+        SliceThickness = metadata.SliceThickness;
+        voxelVolume = (metadata.PixelSpacing(1) ^ 2 * thick * 0.001) *...
+            (SpacingBetweenSlices / SliceThickness);
+    end
+end
+end
 
 function refreshWindowWidthLevel(handles, windowWidth, windowLevel)
     if (windowWidth < 1)
@@ -1192,6 +1245,16 @@ end
 function startScreenMetadata(handles, metadata, firstPosition, nSlices)
     %Show Patient Name
     updatePatientName(handles.gui.textPatientName, metadata)
+    
+    % Display Voxel Volume
+    if isfield(handles.data, 'voxelVolume')
+        if isnan(handles.data.voxelVolume)
+            set(handles.gui.textVoxelVolume, 'String','Not Available')
+        else
+            set(handles.gui.textVoxelVolume, 'String',...
+                sprintf('%.4fL', handles.data.voxelVolume))
+        end
+    end
     
     %
     if isfield(metadata, 'PatientAge')
@@ -1392,7 +1455,7 @@ if ~isempty(handles.data)
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
     if showMaskCheckState
         createMaskOverlay(handles, handles.data.imageCoreInfo.masks(:, :,...
-            newSlicePosition))
+            newSlicePosition), aspect)
     end
     
     guidata(hObject, handles)
@@ -1408,7 +1471,12 @@ function showMask(hObject, eventdata)
         slicePositionString = get(handles.gui.textSliceNumber, 'String');
         currentSlicePosition = getSlicePosition(slicePositionString);
         mask = handles.data.imageCoreInfo.masks(:, :, currentSlicePosition);
-        createMaskOverlay(handles, mask)
+        
+        aspect = calculateDAspect(handles.gui.transversalOption,...
+            handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+            handles.data.imageCoreInfo.metadata{2});
+        
+        createMaskOverlay(handles, mask, aspect)
     else
         % Delete maskOverlay object to make navigation faster
         delete(findobj(handles.gui.imageAxes, 'Tag', 'maskOverlay'))
@@ -1416,7 +1484,7 @@ function showMask(hObject, eventdata)
     end   
 end
 
- function createMaskOverlay(handles, mask)
+ function createMaskOverlay(handles, mask, aspect)
     nRows = size(mask, 1);
     nCols = size(mask, 2);
     mask = mask >= 1;
@@ -1453,6 +1521,7 @@ end
     hold on
     h = imshow(colorMask);
     set(h, 'AlphaData', mask * defaultOpacity, 'tag', 'maskOverlay');   
+    daspect(aspect);
     hold off
  end
 
