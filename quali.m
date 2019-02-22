@@ -199,7 +199,7 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'BackGroundColor', bckColor,...
         'ForeGroundColor', [1, 1, 1],...
         'Tag', 'sliderWindowWidth',...
-        'Callback', @updateWindowWidth)
+        'Callback', @updateWindowLevelCallback)
     
      uicontrol('Parent', imageOptionsPanel,...
         'Units', 'Normalized',...
@@ -234,7 +234,7 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'BackGroundColor', bckColor,...
         'ForeGroundColor', [1, 1, 1],...
         'Tag', 'sliderWindowLevel',...
-        'Callback', @updateWindowLevel)
+        'Callback', @updateWindowLevelCallback)
     
      uicontrol('Parent', imageOptionsPanel,...
         'Units', 'Normalized',...
@@ -635,6 +635,29 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+function updateWindowLevelCallback(hObject, eventdata)
+    handles = guidata(hObject);
+    windowWidth = get(handles.gui.sliderWindowWidth, 'Value');
+    windowLevel = get(handles.gui.sliderWindowLevel, 'Value');
+
+    if (windowWidth < 1)
+        windowWidth = 1;
+    end
+    
+    [Rmin, Rmax] = WL2R(windowWidth,windowLevel);
+    
+    
+    updateWindowWidthLevel(handles.gui.textWindowWL, windowWidth,...
+        windowLevel)
+    
+    set(handles.gui.imageAxes, 'Clim', [Rmin, Rmax]);
+    
+    % Update Window Width Text
+    set(handles.gui.editWindowWidth, 'String', num2str(round(windowWidth)));
+     set(handles.gui.editWindowLevel, 'String', num2str(round(windowLevel)));
+end
+
 function changeOrientation(hObject, eventdata)
     handles = guidata(hObject);
     
@@ -706,44 +729,6 @@ function [handles, currentPosition, nSlices] = rotateCoronal(handles)
     if isfield(handles.data.imageCoreInfo, 'masks')
         handles.data.imageCoreInfo.masks = handles.data.imageCoreInfo.masksCoronal;
     end
-end
-
-function updateWindowMin(hObject, eventdata)
-    handles = guidata(hObject);
-    windowWidth = get(handles.gui.sliderWindowWidth, 'Value');
-    windowLevel = get(handles.gui.sliderWindowLevel, 'Value');
-    
-    windowWidth = windowMax - windowMin;
-    windowLevel = windowWidth / 2;
-    
-    [Rmin, Rmax] = WL2R(windowWidth, windowLevel);
-    
-    updateWindowWidthLevel(handles.gui.textWindowWL, windowWidth,...
-        windowLevel)
-    
-    set(handles.gui.imageAxes, 'Clim', [Rmin, Rmax]);
-    
-    % Update Window Width Text
-    set(handles.gui.editWindowWidth, 'String', num2str(round(windowMin)));    
-end
-
-function updateWindowMax(hObject, eventdata)
-    handles = guidata(hObject);
-    windowWidth = get(handles.gui.sliderWindowWidth, 'Value');
-    windowLevel = get(handles.gui.sliderWindowLevel, 'Value');
-            
-    windowWidth = windowMax - windowMin;
-    windowLevel = windowWidth / 2;
-    
-    [Rmin, Rmax] = WL2R(windowWidth, windowLevel);
-    
-    updateWindowWidthLevel(handles.gui.textWindowWL, windowWidth,...
-        windowLevel)
-    
-    set(handles.gui.imageAxes, 'Clim', [Rmin, Rmax]);
-    
-    % Update Window Width Text
-    set(handles.gui.editWindowLevel, 'String', num2str(round(windowMax)));    
 end
 
 function startWindowWidthLevelSliders(handles, img, Win, LevV)
