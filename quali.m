@@ -703,6 +703,11 @@ function changeOrientation(hObject, eventdata)
         imageSlice, handles.data.Rmin, handles.data.Rmax,...
         aspect);
     
+    if get(handles.gui.showMaskCheck, 'Value')
+        createMaskOverlay(handles,...
+            handles.data.imageCoreInfo.masks(:, :, currentPosition))
+    end
+    
     guidata(hObject, handles)
 end
 
