@@ -705,7 +705,8 @@ function changeOrientation(hObject, eventdata)
     
     if get(handles.gui.showMaskCheck, 'Value')
         createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentPosition))
+            handles.data.imageCoreInfo.masks(:, :, currentPosition),...
+            aspect)
     end
     
     guidata(hObject, handles)
@@ -803,7 +804,8 @@ function flipImageOrMask(hObject, eventdata, imageOrMask)
     
     if get(handles.gui.showMaskCheck, 'Value')
         createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentPosition))
+            handles.data.imageCoreInfo.masks(:, :, currentPosition),...
+            aspect)
     end
         
     guidata(hObject, handles)
@@ -832,7 +834,8 @@ function moveSlider(hObject, ~)
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
     if showMaskCheckState
         createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentSlicePosition))
+            handles.data.imageCoreInfo.masks(:, :, currentSlicePosition),...
+            aspect)
     end
     
     updateSliceNumberText(handles.gui.textSliceNumber,...
@@ -1452,7 +1455,7 @@ if ~isempty(handles.data)
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
     if showMaskCheckState
         createMaskOverlay(handles, handles.data.imageCoreInfo.masks(:, :,...
-            newSlicePosition))
+            newSlicePosition), aspect)
     end
     
     guidata(hObject, handles)
@@ -1468,7 +1471,12 @@ function showMask(hObject, eventdata)
         slicePositionString = get(handles.gui.textSliceNumber, 'String');
         currentSlicePosition = getSlicePosition(slicePositionString);
         mask = handles.data.imageCoreInfo.masks(:, :, currentSlicePosition);
-        createMaskOverlay(handles, mask)
+        
+        aspect = calculateDAspect(handles.gui.transversalOption,...
+            handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+            handles.data.imageCoreInfo.metadata{2});
+        
+        createMaskOverlay(handles, mask, aspect)
     else
         % Delete maskOverlay object to make navigation faster
         delete(findobj(handles.gui.imageAxes, 'Tag', 'maskOverlay'))
@@ -1476,7 +1484,7 @@ function showMask(hObject, eventdata)
     end   
 end
 
- function createMaskOverlay(handles, mask)
+ function createMaskOverlay(handles, mask, aspect)
     nRows = size(mask, 1);
     nCols = size(mask, 2);
     mask = mask >= 1;
@@ -1513,6 +1521,7 @@ end
     hold on
     h = imshow(colorMask);
     set(h, 'AlphaData', mask * defaultOpacity, 'tag', 'maskOverlay');   
+    daspect(aspect);
     hold off
  end
 
