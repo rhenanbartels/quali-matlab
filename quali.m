@@ -995,19 +995,20 @@ end
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%TODO Force to show chosen Orientation View
 function aspect = calculateDAspect(transversal, sagittal, metadata_1, metadata_2)
     orientation = getOrientationName(transversal, sagittal);
-    switch orientation
-        case 'transversal'
-            aspect = [1, 1, 1];
-        case 'sagittal'
-            diffSliceLoc = abs(metadata_1.SliceLocation - metadata_2.SliceLocation);
-            pixelSpacing = metadata_1.PixelSpacing(1);
-            aspect = [diffSliceLoc / pixelSpacing, 1, 1];
-        otherwise
-            diffSliceLoc = abs(metadata_1.SliceLocation - metadata_2.SliceLocation);
-            pixelSpacing = metadata_1.PixelSpacing(1);
-            aspect = [diffSliceLoc / pixelSpacing, 1, 1];
+    
+    if isfield(metadata_1, 'SliceLocation') &&...
+            isfield(metadata_2, 'SliceLocation') && ...
+            ~strcmp(orientation, 'transversal')
+        diffSliceLoc = abs(metadata_1.SliceLocation -...
+            metadata_2.SliceLocation);
+        
+        pixelSpacing = metadata_1.PixelSpacing(1);
+        aspect = [diffSliceLoc / pixelSpacing, 1, 1];
+    else
+         aspect = [1, 1, 1];
     end
 end
 
