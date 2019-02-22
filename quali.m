@@ -850,6 +850,14 @@ if rootPath
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)            
             
+            % Save Image size
+            imageSize = size(handles.data.imageCoreInfo.matrix);
+            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
+            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
+            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
+            handles.data.imageCoreInfo.nSlices = imageSize(3);
+            
+            
             % Start Image State
             handles = startImageState(handles);
             
@@ -863,12 +871,6 @@ if rootPath
             handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
             handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
             handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
-            
-            imageSize = size(handles.data.imageCoreInfo.matrix);
-            handles.data.imageCoreInfo.sizeTransversal = imageSize(3);
-            handles.data.imageCoreInfo.sizeSagittal = imageSize(2);
-            handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
-            handles.data.imageCoreInfo.nSlices = imageSize(3);
             
             % Save imported data
             guidata(hObject, handles)            
