@@ -871,6 +871,10 @@ if rootPath
             handles.data.imageCoreInfo.sizeCoronal = imageSize(1);
             handles.data.imageCoreInfo.nSlices = imageSize(3);
             
+            % Calculate Voxel Volume
+            handles.data.voxelVolume = calculateVoxelVolume(...
+                handles.data.imageCoreInfo.metadata{1},...
+                handles.data.imageCoreInfo.metadata{2});           
             
             % Start Image State
             handles = startImageState(handles);
@@ -1016,6 +1020,42 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function voxelVolume = calculateVoxelVolume(metadata, metadata2)
+if isfield(metadata,'SpacingBetweenSlices')
+    if isfield(metadata,'SliceThickness')
+        if abs(metadata.SpacingBetweenSlices) < metadata.SliceThickness
+            voxelVolume =(metadata.PixelSpacing(1) ^ 2 *...
+                metadata.SliceThickness * 0.001) *...
+                (abs(metadata.SpacingBetweenSlices) / metadata.SliceThickness);
+        else
+            voxelVolume = (metadata.PixelSpacing(1) ^ 2 *...
+                metadata.SliceThickness * 0.001);
+        end
+    else
+        voxelVolume = (metadata.PixelSpacing(1) ^ 2 *...
+            metadata.SliceThickness * 0.001);
+    end
+else
+    
+    if isfield(metadata,'SliceThickness')==1;
+        thick=abs(metadata.SliceThickness);
+    elseif isfield(metadata,'SpacingBetweenSlices');
+        thick=abs(metadata.SpacingBetweenSlices);
+    else
+        thick=abs(metadata.PixelDimensions(3));
+    end
+    
+    if isfield(metadata, 'SliceLocation')
+        SpacingBetweenSlices = abs(metadata2.SliceLocation -...
+            metadata.SliceLocation);
+    end
+
+    SliceThickness = metadata.SliceThickness;
+    voxelVolume = (metadata.PixelSpacing(1) ^ 2 * thick * 0.001) *...
+        (SpacingBetweenSlices / SliceThickness);
+end
+end
 
 function refreshWindowWidthLevel(handles, windowWidth, windowLevel)
     if (windowWidth < 1)
@@ -1192,6 +1232,12 @@ end
 function startScreenMetadata(handles, metadata, firstPosition, nSlices)
     %Show Patient Name
     updatePatientName(handles.gui.textPatientName, metadata)
+    
+    % Display Voxel Volume
+    if isfield(handles.data, 'voxelVolume')
+        set(handles.gui.textVoxelVolume, 'String',...
+            sprintf('%.4fL', handles.data.voxelVolume))
+    end
     
     %
     if isfield(metadata, 'PatientAge')
