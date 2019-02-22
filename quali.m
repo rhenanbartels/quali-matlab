@@ -250,26 +250,22 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Tag', 'editWindowLevel',...
         'Callback', @updateWindowLevelEdit);
     
-    uicontrol('Parent',imageOptionsPanel,...
+    uicontrol('Parent', imageOptionsPanel,...
         'Units', 'Normalized',...
-        'Position', [0.1, 0.66, 0.2, 0.1],...
-        'String', 'Lung',...
+        'Position', [0.15, 0.64, 0.5, 0.1],...
+        'Style', 'Popupmenu',...
+        'String', {'Lung', 'Bone'},...
         'Fontsize', 14,....
-        'Fontweight', 'bold');    
-    
-    uicontrol('Parent',imageOptionsPanel,...
-        'Units', 'Normalized',...
-        'Position', [0.38, 0.66, 0.2, 0.1],...
-        'String', 'Bone',...
-        'Fontsize', 14,....
+        'Tag', 'popWindowWidthLevel',...
         'Fontweight', 'bold');
     
     uicontrol('Parent',imageOptionsPanel,...
         'Units', 'Normalized',...
         'Position', [0.65, 0.66, 0.2, 0.1],...
-        'String', 'Reset',...
+        'String', 'Set',...
         'Fontsize', 14,....
-        'Fontweight', 'bold');
+        'Fontweight', 'bold',...
+        'Callback', @setWindowWidthLevelButton);
     
     % Flip Image
      uicontrol('Parent', imageOptionsPanel,...
@@ -637,47 +633,34 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function setWindowWidthLevelButton(hObject, eventdata)
+    handles = guidata(hObject);
+    options = get(handles.gui.popWindowWidthLevel, 'String');
+    
+    selectedOption = options{get(handles.gui.popWindowWidthLevel, 'Value')};
+    
+    switch selectedOption
+        case 'Lung'
+            refreshWindowWidthLevel(handles, 1500, -600)
+        case 'Bone'
+            refreshWindowWidthLevel(handles, 1800, 400)
+    end
+end
 
 function updateWindowLevelEdit(hObject, eventdata)
     handles = guidata(hObject);
     windowWidth = str2double(get(handles.gui.editWindowWidth, 'String'));
     windowLevel = str2double(get(handles.gui.editWindowLevel, 'String'));
     
-    if (windowWidth < 1)
-        windowWidth = 1;
-    end
-   
-    [Rmin, Rmax] = WL2R(windowWidth,windowLevel);
-    
-    updateWindowWidthLevel(handles.gui.textWindowWL, windowWidth,...
-        windowLevel)
-    
-    set(handles.gui.sliderWindowWidth, 'Value', windowWidth);
-    set(handles.gui.sliderWindowLevel, 'Value', windowLevel);
-    
-    set(handles.gui.imageAxes, 'Clim', [Rmin, Rmax]);
+    refreshWindowWidthLevel(handles, windowWidth, windowLevel)
 end
 
 function updateWindowLevelCallback(hObject, eventdata)
     handles = guidata(hObject);
     windowWidth = get(handles.gui.sliderWindowWidth, 'Value');
     windowLevel = get(handles.gui.sliderWindowLevel, 'Value');
-
-    if (windowWidth < 1)
-        windowWidth = 1;
-    end
     
-    [Rmin, Rmax] = WL2R(windowWidth,windowLevel);
-    
-    
-    updateWindowWidthLevel(handles.gui.textWindowWL, windowWidth,...
-        windowLevel)
-    
-    set(handles.gui.imageAxes, 'Clim', [Rmin, Rmax]);
-    
-    % Update Window Width Text
-    set(handles.gui.editWindowWidth, 'String', num2str(round(windowWidth)));
-     set(handles.gui.editWindowLevel, 'String', num2str(round(windowLevel)));
+    refreshWindowWidthLevel(handles, windowWidth, windowLevel)
 end
 
 function changeOrientation(hObject, eventdata)
@@ -1024,6 +1007,26 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function refreshWindowWidthLevel(handles, windowWidth, windowLevel)
+    if (windowWidth < 1)
+        windowWidth = 1;
+    end
+   
+    [Rmin, Rmax] = WL2R(windowWidth,windowLevel);
+    
+    updateWindowWidthLevel(handles.gui.textWindowWL, windowWidth,...
+        windowLevel)
+    
+    set(handles.gui.sliderWindowWidth, 'Value', windowWidth);
+    set(handles.gui.sliderWindowLevel, 'Value', windowLevel);
+    
+    set(handles.gui.imageAxes, 'Clim', [Rmin, Rmax]);
+    
+     % Update Window Width Text
+    set(handles.gui.editWindowWidth, 'String', num2str(round(windowWidth)));
+    set(handles.gui.editWindowLevel, 'String', num2str(round(windowLevel)));
+end
 
 %TODO Force to show chosen Orientation View
 function aspect = calculateDAspect(transversal, sagittal, metadata_1, metadata_2)
