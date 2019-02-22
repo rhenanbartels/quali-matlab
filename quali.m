@@ -1441,8 +1441,8 @@ end
     
     colorMask = ones(nRows, nCols, 3);
     colorMask(:, :, 1) = colorMask(:, :, 1) * overlayColor(1);
-    colorMask(:, :, 2) = colorMask(:, :, 3) * overlayColor(1);
-    colorMask(:, :, 3) = colorMask(:, :, 3) * overlayColor(1);
+    colorMask(:, :, 2) = colorMask(:, :, 2) * overlayColor(2);
+    colorMask(:, :, 3) = colorMask(:, :, 3) * overlayColor(3);
     
     delete(findobj(handles.gui.imageAxes, 'Tag', 'maskOverlay'))
     hold on
