@@ -916,11 +916,7 @@ function changeOrientation(hObject, eventdata)
         imageSlice, handles.data.Rmin, handles.data.Rmax,...
         aspect);
     
-    if get(handles.gui.showMaskCheck, 'Value')
-        createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentPosition),...
-            aspect)
-    end
+    maskOverlayWrapper(handles)
     
     guidata(hObject, handles)
 end
@@ -1015,11 +1011,7 @@ function flipImageOrMask(hObject, eventdata, imageOrMask)
                 handles.data.imageCoreInfo.masks, dimension);            
     end    
     
-    if get(handles.gui.showMaskCheck, 'Value')
-        createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentPosition),...
-            aspect)
-    end
+    maskOverlayWrapper(handles)
         
     guidata(hObject, handles)
 end
@@ -1042,14 +1034,7 @@ function moveSlider(hObject, ~)
     showImageSlice(handles.gui.imageAxes, imageSlice,...
        handles.data.Rmin, handles.data.Rmax, aspect);   
     
-    % TODO: Check if mask exists
-    % Check show mask state
-    showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
-    if showMaskCheckState
-        createMaskOverlay(handles,...
-            handles.data.imageCoreInfo.masks(:, :, currentSlicePosition),...
-            aspect)
-    end
+    maskOverlayWrapper(handles);
     
     updateSliceNumberText(handles.gui.textSliceNumber,...
         currentSlicePosition, nSlices)
