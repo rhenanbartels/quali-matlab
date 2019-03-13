@@ -406,6 +406,7 @@ function createImageOptionsWidgets(imageOptionsPanel, bckColor)
         'Horizontalalignment', 'Left',...
         'BackGroundColor', bckColor,...
         'ForeGroundColor', [1, 1, 1],...
+        'Enable', 'Off',...
         'Callback', @maskSettings,...
         'Tag', 'buttonMaskSettings')
         
@@ -1422,6 +1423,9 @@ function manipulateMaskWidgets(handles, onOff)
 
     % Enable mask related widgets
     set(handles.gui.buttonFlipMask, 'Enable', onOff);
+    
+    % Enale mask settigns
+    set(handles.gui.buttonMaskSettings, 'Enable', onOff);
 end
 
 function updateWindowWidthLevel(textObject, Win, LevV)
