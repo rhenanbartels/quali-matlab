@@ -635,6 +635,8 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% TODO: Just open one mask settings window
+% TODO: Add settings icon
 function maskSettings(hObject, eventdata)
     handles = guidata(hObject);
     % Create custom color palette
