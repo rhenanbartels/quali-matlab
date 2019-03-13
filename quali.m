@@ -1255,8 +1255,12 @@ function maskOverlayWrapper(handles)
 
     slicePosition = extractSlicePosition(...
         get(handles.gui.textSliceNumber, 'String'));
-    createMaskOverlay(handles, handles.data.imageCoreInfo.masks(:, :,...
-        slicePosition), aspect)
+    
+    showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
+    if showMaskCheckState
+        createMaskOverlay(handles, handles.data.imageCoreInfo.masks(:, :,...
+            slicePosition), aspect)
+    end
 end
 
 function voxelVolume = calculateVoxelVolume(metadata, metadata2)
@@ -1687,11 +1691,8 @@ if ~isempty(handles.data)
     %Refresh slider value
     set(handles.gui.slider, 'Value', newSlicePosition);
 
-    % Check show mask state
-    showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
-    if showMaskCheckState
-        maskOverlayWrapper(handles)
-    end
+    % Show Mask
+    maskOverlayWrapper(handles)
     
     guidata(hObject, handles)
 end
