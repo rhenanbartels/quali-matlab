@@ -840,6 +840,9 @@ function maskSettings(hObject, eventdata)
     uiwait(fig)   
     
     guidata(hObject, handles);
+    
+    % Refresh mask view
+    maskOverlayWrapper(handles)
 end
 
 function setWindowWidthLevelButton(hObject, eventdata)
@@ -1244,6 +1247,17 @@ end
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function maskOverlayWrapper(handles)
+    aspect = calculateDAspect(handles.gui.transversalOption,...
+        handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+        handles.data.imageCoreInfo.metadata{2});
+
+    slicePosition = extractSlicePosition(...
+        get(handles.gui.textSliceNumber, 'String'));
+    createMaskOverlay(handles, handles.data.imageCoreInfo.masks(:, :,...
+        slicePosition), aspect)
+end
+
 function voxelVolume = calculateVoxelVolume(metadata, metadata2)
 voxelVolume = NaN;
 if isfield(metadata,'SpacingBetweenSlices')
@@ -1592,19 +1606,24 @@ end
 end
 
 function newSlicePosition = getSlicePosition(slicePositionString, direction)
-    tempSlicePosition = regexp(slicePositionString, '/', 'split');
+     slicePosition = extractSlicePosition(slicePositionString);
     
     if nargin == 1
         direction = NaN;
     end
 
     if isnan(direction)
-        newSlicePosition = str2double(tempSlicePosition(1));
-    elseif direction > 0
-        newSlicePosition = str2double(tempSlicePosition(1)) + 1;
+        newSlicePosition = slicePosition;
+    elseif direction >= 0
+        newSlicePosition = slicePosition + 1;
     else
-        newSlicePosition = str2double(tempSlicePosition(1)) - 1;
+        newSlicePosition = slicePosition - 1;
     end
+end
+
+function slicePosition = extractSlicePosition(slicePosStr)
+    tempSlicePosition = regexp(slicePosStr, '/', 'split');
+    slicePosition = str2double(tempSlicePosition(1));
 end
 
 function refreshSlicePosition(hObject, eventdata)
@@ -1667,8 +1686,7 @@ if ~isempty(handles.data)
     % Check show mask state
     showMaskCheckState = get(handles.gui.showMaskCheck, 'Value');
     if showMaskCheckState
-        createMaskOverlay(handles, handles.data.imageCoreInfo.masks(:, :,...
-            newSlicePosition), aspect)
+        maskOverlayWrapper(handles)
     end
     
     guidata(hObject, handles)
