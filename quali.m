@@ -156,6 +156,21 @@ function mainFig = startMainInterface()
         'Tag', 'importMaskButton',...
         'Callback', @openMask);
 
+    % Rescaling Menu
+    rescalingMenu= uimenu('Parent', mainFig,...
+        'Label', 'Rescale Image');
+    uimenu('Parent', rescalingMenu,...
+        'Label', 'Set Aorta ROI',...
+        'Checked', 'Off',...
+        'Tag', 'aortaMenu',...
+        'Callback', @setAortaRoi);
+    
+    uimenu('Parent', rescalingMenu,...
+        'Label', 'Set Air ROI',...
+        'Checked', 'Off',...
+        'Tag', 'airMenu',...
+        'Callback', @setAirRoi);
+    
     uicontrol('Parent', mainFig,...
         'Style', 'slider',...
         'Units', 'Normalized',...
@@ -634,6 +649,42 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function setAortaRoi(hObject, eventdata)
+    handles = guidata(hObject);
+    menuState = get(handles.gui.aortaMenu, 'Label');
+    if isfield(handles.data, 'roi_aorta_properties')
+        delete(handles.data.roi_aorta_properties.handle);
+        set(handles.gui.aortaMenu, 'Label', 'Set Aorta ROI')
+    end
+    
+    if strcmp(menuState, 'Set Aorta ROI')
+        [handles.data.roi_aorta_properties.handle,...
+            handles.data.roi_aorta_properties.position] = dragAndDrop(...
+            100, 100, 8, 'r'); 
+        set(handles.gui.aortaMenu, 'Label', 'Remove Aorta ROI')
+        guidata(hObject, handles)
+    end
+end
+
+function setAirRoi(hObject, eventdata)
+    handles = guidata(hObject);
+    menuState = get(handles.gui.airMenu, 'Label');
+    if isfield(handles.data, 'roi_air_properties')
+        delete(handles.data.roi_air_properties.handle);
+        set(handles.gui.airMenu, 'Label', 'Set Air ROI')
+    end
+    
+    if strcmp(menuState, 'Set Air ROI')
+        [handles.data.roi_air_properties.handle,...
+            handles.data.roi_air_properties.position] = dragAndDrop(...
+            100, 100, 8, 'b'); 
+        set(handles.gui.airMenu, 'Label', 'Remove Air ROI')
+        guidata(hObject, handles)
+    end
+end
+
+
 
 % TODO: Just open one mask settings window
 % TODO: Add settings icon
@@ -1235,6 +1286,127 @@ end
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function [a, properties] = dragAndDrop(x, y, r, color)
+d = r*2;
+px = x;
+py = y;
+dragging = [];
+orPos = [];
+
+set(gcf,'WindowButtonUpFcn',@dropObject,'units','normalized',...
+    'WindowButtonMotionFcn',@moveObject);
+
+a = rectangle('Position',[px py d d],'Curvature',[1,1],...
+    'ButtonDownFcn',@dragObject,'EdgeColor', color, 'LineWidth', 2);
+
+
+properties = get(a, 'Position');
+
+    function dragObject(hObject,eventdata)
+        selection_type = get(gcf, 'SelectionType');
+        dragging = hObject;
+        orPos = get(a,'Position');
+        face_color = get(a, 'FaceColor');
+        if strcmp(selection_type, 'open')
+            if isempty(face_color) || strcmp('none', face_color)
+                set(a, 'FaceColor', color)                
+            else
+                set(a, 'FaceColor', 'None')               
+            end
+        end
+        
+    end
+    function dropObject(hObject,eventdata)
+        
+        dragging = [];
+        handles = guidata(hObject);
+        color = get(a, 'EdgeColor');
+        if color == [0 1 0]
+            [m, imgMask] = averageCircle(handles, 'air');            
+        else
+            [m, imgMask] = averageCircle(handles, 'aorta');            
+        end
+        
+    end
+    function moveObject(hObject,eventdata)
+        selection_type = get(gcf,'SelectionType');
+        newPos = get(gca,'CurrentPoint');
+        %current_position = get(a, 'Position');        
+        if ~isempty(dragging)
+            if ~strcmp('extend', selection_type)
+                current_position = get(a, 'Position');
+                %Avoid to the circle to flip to the right.
+                posDiff(1) = newPos(1, 1) - orPos(1, 1);
+                posDiff(2) = -(newPos(1, 2) - orPos(1, 2));
+                current_position = current_position +...
+                    [[posDiff(1) -posDiff(2)] 0 0];
+                if d > 0
+                    %current_position(3:4) = d;
+                end
+                orPos = newPos(1, 1:2);
+                set(dragging,'Position',current_position);
+            else
+                rectangle_position = get(a, 'Position');
+                mouse_position = get(gca,'CurrentPoint');
+                new_radius = (mouse_position(1) - rectangle_position(1));
+                new_rectangle_position = [rectangle_position(1:2) new_radius new_radius];
+                if all(new_rectangle_position > 0)
+                    set(a, 'Position', new_rectangle_position)
+                end
+            end
+        end
+    end
+  drawnow;
+end
+
+function [m, imgMask, mask] = averageCircle(handles, roi_type)
+%meanDisk computes mean of values inside a circle
+%   M = meanDisk(IMG, XC, YC, R) returns the mean of IMG(Y,X) for all X and
+%   Y such that the Euclidean distance of (X,Y) from (XC,YC) is less than
+%   R. IMG must be 2-D, R must be positive, and some elements of IMG must
+%   lie within the circle.
+% This section is for efficiency only - avoids wasting computation time on
+% pixels outside the bounding square
+
+switch roi_type
+    case 'aorta'
+                circle_object = findobj(gca, 'Type', 'rectangle','-and',...
+            'EdgeColor', 'r');
+        roi_handle = handles.data.roi_aorta_properties;    
+    case 'air'
+        circle_object = findobj(gca, 'Type', 'rectangle','-and',...
+            'EdgeColor', 'b');
+        roi_handle = handles.roi_air_properties; 
+end
+    
+position = get(circle_object, 'Position');
+%x do circulo
+r = position(3) / 2;
+xc = position(1) + r; %reposiciona o centro do circulo.
+%y do circulo
+yc = position(2) + r; %reposiciona o centro do circulo.
+%raio
+
+img = handles.data.imageCoreInfo.matrix;
+
+slice = getSlicePosition(get(handles.gui.textSliceNumber, 'string'));
+[sy sx] = size(img(:,:, slice));
+xmin = max(1, floor(xc-r));
+xmax = min(sx, ceil(xc+r));
+ymin = max(1, floor(yc-r));
+ymax = min(sy, ceil(yc+r));
+img = img(ymin:ymax, xmin:xmax, slice); % trim boundaries
+%figure;imagesc(img);colormap(gray(156))
+xc = xc - xmin + 1;
+yc = yc - ymin + 1;
+% Make a circle mask
+[x y] = meshgrid(1:size(img,2), 1:size(img,1));
+mask = (x-xc).^2 + (y-yc).^2 < r.^2;
+% Compute mean
+m = sum(sum(double(img) .* mask)) / sum(mask(:));
+imgMask = double(img) .* mask;
+end
+
 function maskOverlayWrapper(handles)
     aspect = calculateDAspect(handles.gui.transversalOption,...
         handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
@@ -1436,6 +1608,7 @@ end
 function showImageSlice(axisObject, imageSlice, Rmin, Rmax, aspect)
     axesChildren = get(axisObject, 'children');
     if ~isempty(axesChildren)
+        axesChildren = findobj(axesChildren, 'type', 'Image');
         set(axesChildren, 'cdata', imageSlice);  
     else
         axes(axisObject)
