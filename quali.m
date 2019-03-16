@@ -650,6 +650,12 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %                             CALLBACKS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%TODO: Move both ROIs when both are on screen
+%TODO: Save ROI state; Position, Slice and Axis
+%TODO: Only Show Roi in the Slice it was set and only in the same AXIS
+%TODO: Return mouseMove to windowButtonDwnFcn. Try o keep both Drag n' Drop
+%and moveMove
+
 function setAortaRoi(hObject, eventdata)
     handles = guidata(hObject);
     menuState = get(handles.gui.aortaMenu, 'Label');
