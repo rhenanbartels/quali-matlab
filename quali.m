@@ -1521,6 +1521,16 @@ end
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function imageMatrix = scalePixels(metadata, imageMatrix)
+    if isfield(metadata, 'RescaleSlope') &&...
+            isfield(metadata, 'RescaleIntercept')
+        slope = metadata.RescaleSlope;
+        intercept = metadata.RescaleIntercept;
+        imageMatrix = imageMatrix * slope + intercept;
+    end
+    imageMatrix = int16(imageMatrix);
+end
+
 function handles = removeRescalingRois(handles)
     if isfield(handles.data, 'roi_aorta_properties')
         delete(handles.data.roi_aorta_properties.handle);
