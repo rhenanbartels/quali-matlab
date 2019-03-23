@@ -669,6 +669,14 @@ function setAortaRoi(hObject, eventdata)
             handles.data.roi_aorta_properties.position] = dragAndDrop(...
             100, 100, 8, 'r'); 
         set(handles.gui.aortaMenu, 'Label', 'Remove Aorta ROI')
+        
+        % Save current Slice position
+        slicePosition = extractSlicePosition(...
+            get(handles.gui.textSliceNumber, 'String'));
+        % Save current View.
+        handles.data.roi_aorta_properties.slicePosition = slicePosition;
+        handles.data.roi_aorta_properties.orientation =...
+            handles.data.orientation;
         guidata(hObject, handles)
     end
 end
@@ -686,6 +694,14 @@ function setAirRoi(hObject, eventdata)
             handles.data.roi_air_properties.position] = dragAndDrop(...
             100, 100, 8, 'b'); 
         set(handles.gui.airMenu, 'Label', 'Remove Air ROI')
+        
+         % Save current Slice position
+        slicePosition = extractSlicePosition(...
+            get(handles.gui.textSliceNumber, 'String'));
+        % Save current View.
+        handles.data.roi_air_properties.slicePosition = slicePosition;
+        handles.data.roi_air_properties.orientation =...
+            handles.data.orientation;
         guidata(hObject, handles)
     end
 end
@@ -1292,6 +1308,27 @@ end
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function rescaleRoisViewHandler(handles)
+    currentSlicePosition = extractSlicePosition(...
+        get(handles.gui.textSliceNumber, 'String'));
+    
+    if isfield(handles.data, 'roi_air_properties')
+        showHideRoi(handles.data.roi_air_properties, currentSlicePosition);
+    end
+    if isfield(handles.data, 'roi_aorta_properties')
+        showHideRoi(handles.data.roi_aorta_properties,...
+            currentSlicePosition);
+    end
+end
+
+function showHideRoi(roiObject, currentSlice)
+    if roiObject.slicePosition ~= currentSlice
+        set(roiObject.handle, 'Visible', 'Off')
+    else
+        set(roiObject.handle, 'Visible', 'On')
+    end
+end
+
 function [a, properties] = dragAndDrop(x, y, r, color)
 d = r*2;
 px = x;
@@ -1856,6 +1893,9 @@ if ~isempty(handles.data)
     
     %Refresh slider value
     set(handles.gui.slider, 'Value', newSlicePosition);
+    
+    %Refresh sclaing ROIs
+    rescaleRoisViewHandler(handles)
 
     % Show Mask
     maskOverlayWrapper(handles)
