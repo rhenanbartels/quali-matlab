@@ -1143,6 +1143,9 @@ if rootPath
            
             handles = prepareImageInformation(handles);  
             
+            %Remove rescaling ROIs if exists
+            handles = removeRescalingRois(handles);
+            
             % Start Image State
             handles = startImageState(handles);
             
@@ -1192,6 +1195,9 @@ function openMatFile(hObject, ~)
             handles.data.lastVisitedFolder = rootPath;
             
             matFile = load(rootPath);
+            
+            %Remove rescaling ROIs if exists
+            handles = removeRescalingRois(handles);
             
             handles.data.imageCoreInfo.matrix = matFile.allResults.structure.uncalibratedLung;
             handles.data.imageCoreInfo.fileNames = {};
@@ -1307,6 +1313,19 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function handles = removeRescalingRois(handles)
+    if isfield(handles.data, 'roi_aorta_properties')
+        delete(handles.data.roi_aorta_properties.handle);
+        handles.data = rmfield(handles.data, 'roi_aorta_properties');
+        set(handles.gui.aortaMenu, 'Label', 'Set Aorta ROI')
+    end
+    if isfield(handles.data, 'roi_air_properties')
+        delete(handles.data.roi_air_properties.handle);
+        handles.data = rmfield(handles.data, 'roi_air_properties');
+        set(handles.gui.airMenu, 'Label', 'Set Air ROI')
+    end    
+end
 
 function rescaleRoisViewHandler(handles)
     currentSlicePosition = extractSlicePosition(...
