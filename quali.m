@@ -913,6 +913,7 @@ function setAortaRoi(hObject, eventdata)
     menuState = get(handles.gui.aortaMenu, 'Label');
     if isfield(handles.data, 'roi_aorta_properties')
         delete(handles.data.roi_aorta_properties.handle);
+        handles.data = rmfield(handles.data, 'roi_aorta_properties');
         set(handles.gui.aortaMenu, 'Label', 'Set Aorta ROI')
     end
     
@@ -928,9 +929,10 @@ function setAortaRoi(hObject, eventdata)
         % Save current View.
         handles.data.roi_aorta_properties.slicePosition = slicePosition;
         handles.data.roi_aorta_properties.orientation =...
-            handles.data.orientation;
-        guidata(hObject, handles)
+            handles.data.orientation;        
+        
     end
+    guidata(hObject, handles)
 end
 
 function setAirRoi(hObject, eventdata)
@@ -938,6 +940,7 @@ function setAirRoi(hObject, eventdata)
     menuState = get(handles.gui.airMenu, 'Label');
     if isfield(handles.data, 'roi_air_properties')
         delete(handles.data.roi_air_properties.handle);
+        handles.data = rmfield(handles.data, 'roi_air_properties');
         set(handles.gui.airMenu, 'Label', 'Set Air ROI')
     end
     
@@ -953,9 +956,10 @@ function setAirRoi(hObject, eventdata)
         % Save current View.
         handles.data.roi_air_properties.slicePosition = slicePosition;
         handles.data.roi_air_properties.orientation =...
-            handles.data.orientation;
-        guidata(hObject, handles)
+            handles.data.orientation;        
+        
     end
+    guidata(hObject, handles)
 end
 
 
