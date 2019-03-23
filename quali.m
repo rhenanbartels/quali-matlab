@@ -1313,16 +1313,18 @@ function rescaleRoisViewHandler(handles)
         get(handles.gui.textSliceNumber, 'String'));
     
     if isfield(handles.data, 'roi_air_properties')
-        showHideRoi(handles.data.roi_air_properties, currentSlicePosition);
+        showHideRoi(handles.data.roi_air_properties, currentSlicePosition,...
+            handles.data.orientation);
     end
     if isfield(handles.data, 'roi_aorta_properties')
         showHideRoi(handles.data.roi_aorta_properties,...
-            currentSlicePosition);
+            currentSlicePosition, handles.data.orientation);
     end
 end
 
-function showHideRoi(roiObject, currentSlice)
-    if roiObject.slicePosition ~= currentSlice
+function showHideRoi(roiObject, currentSlice, currentOrientation)
+    if roiObject.slicePosition ~= currentSlice...
+            || ~strcmp(roiObject.orientation, currentOrientation)
         set(roiObject.handle, 'Visible', 'Off')
     else
         set(roiObject.handle, 'Visible', 'On')
