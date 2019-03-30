@@ -678,8 +678,7 @@ function rescaleImage(hObject, eventdata)
         'Position', [0, 0.2, 1, 0.85],...
         'Bordertype', 'None',...
         'Backgroundcolor', bckColor,...
-        'Tag', 'rescaleGroup');
-    
+        'Tag', 'rescaleGroup');    
     
     uicontrol('Parent', orientationGroup,...
         'Units', 'Normalized',...
@@ -961,8 +960,6 @@ function setAirRoi(hObject, eventdata)
     end
     guidata(hObject, handles)
 end
-
-
 
 % TODO: Just open one mask settings window
 % TODO: Add settings icon
