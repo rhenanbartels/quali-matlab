@@ -1392,9 +1392,14 @@ if rootPath
         
         % Check if any image was found
         if ~isempty(handles.data.imageCoreInfo)            
-            
            
             handles = prepareImageInformation(handles);  
+            
+            %Rescale image with Metadata (if exists).
+            [handles.data.imageCoreInfo.matrix,...
+                handles.rescaleSettings.rescaleOption] =...
+                scalePixels(handles.data.imageCoreInfo.metadata{1},...
+                handles.data.imageCoreInfo.matrix);
             
             %Remove rescaling ROIs if exists
             handles = removeRescalingRois(handles);
@@ -1458,6 +1463,12 @@ function openMatFile(hObject, ~)
             handles.data.imageCoreInfo.sortedIndexes = {};
             
             handles.data.imageCoreInfo.masks = matFile.allResults.structure.lungMask;
+            
+            %Rescale image with Metadata (if exists).
+            [handles.data.imageCoreInfo.matrix,...
+                handles.rescaleSettings.rescaleOption] =...
+                scalePixels(handles.data.imageCoreInfo.metadata{1},...
+                handles.data.imageCoreInfo.matrix);
             
             % Get Tranversal, Sagittal and Coronal Orientation
             [masksSagittal, masksCoronal] = getOrientations(...,
@@ -1567,12 +1578,23 @@ end
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function imageMatrix = scalePixels(metadata, imageMatrix)
+function rescaleWithRoi(handles)
+    if isfield(handles.data, 'roi_aorta_properties')...
+            && isfield(handles.data, 'roi_air_properties')
+        [avgAir, imgMaskAir] = averageCircle(handles, 'air'); 
+        [avgAorta, imgMaskAorta] = averageCircle(handles, 'aorta'); 
+    end
+end
+
+function [imageMatrix, rescaleOption] = scalePixels(metadata, imageMatrix)
+    % Rescale image with metadata 
+    rescaleOption = 'none';
     if isfield(metadata, 'RescaleSlope') &&...
             isfield(metadata, 'RescaleIntercept')
         slope = metadata.RescaleSlope;
         intercept = metadata.RescaleIntercept;
         imageMatrix = imageMatrix * slope + intercept;
+        rescaleOption = 'metadata';
     end
     imageMatrix = int16(imageMatrix);
 end
