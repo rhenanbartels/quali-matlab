@@ -843,7 +843,7 @@ function rescaleImage(hObject, eventdata)
         'Position', [0.74, 0.0, 0.25, 0.1],...
         'Fontweight', 'bold',...
         'Fontsize', 14,...
-        'Callback', @cancelMaskSettings);    
+        'Callback', @cancelRescaleSettings);    
     
     handles.rescale_gui = guihandles(fig);
     guidata(fig, handles);
@@ -917,6 +917,13 @@ function rescaleImage(hObject, eventdata)
         delete(fig);
     end
     
+    function cancelRescaleSettings(hObject, eventdata)
+        handles = guidata(hObject);
+        uiresume(handles.rescale_gui.fig)
+        handles = rmfield(handles, 'rescale_gui');
+        delete(fig);
+        cancelled = true;
+    end
     function setRescaleOption(handles)
         if strcmp(handles.rescaleSettings.rescaleOption, 'metadata')
             set(handles.rescale_gui.metadataOption, 'Value', 1);
@@ -944,6 +951,8 @@ function rescaleImage(hObject, eventdata)
     end
     
 
+    cancelled = false;
+
     displayStatus(handles.gui.statusText, handles.gui.statusLight,...
             'Preparing for rescaling...')
 
@@ -965,39 +974,41 @@ function rescaleImage(hObject, eventdata)
     set(fig, 'Visible', 'On') 
     uiwait(fig)        
     
-    displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+    if ~cancelled
+        displayStatus(handles.gui.statusText, handles.gui.statusLight,...
             'Rescaling image...')
-    handles = removeRescalingFromImage(handles, prevRescaleOption, prevSlope,...
-        prevSntercept);
-    
-    handles = rescaleImage(handles);
-    
-    % Get Tranversal, Sagittal and Coronal Orientation
-    [matrixSagittal, matrixCoronal] = getOrientations(...,
-        handles.data.imageCoreInfo.matrix);
-    
-    handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
-    handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
-    handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
-    
-    % Refresh image slice
-    aspect = calculateDAspect(handles.gui.transversalOption,...
-        handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
-        handles.data.imageCoreInfo.metadata{2});
-    
-    currentPosition = getSlicePosition(get(handles.gui.textSliceNumber,...
-        'String'), NaN);
-    imageSlice = squeeze(handles.data.imageCoreInfo.matrix(:, :,...
-        currentPosition, :));
-    
-    showImageSlice(handles.gui.imageAxes,...
-        imageSlice, handles.data.Rmin, handles.data.Rmax,...
-        aspect);
-    
-    guidata(hObject, handles);
-            
-    % Set status to ready
-    displayStatus(handles.gui.statusText, handles.gui.statusLight)
+        handles = removeRescalingFromImage(handles, prevRescaleOption, prevSlope,...
+            prevSntercept);
+        
+        handles = rescaleImage(handles);
+        
+        % Get Tranversal, Sagittal and Coronal Orientation
+        [matrixSagittal, matrixCoronal] = getOrientations(...,
+            handles.data.imageCoreInfo.matrix);
+        
+        handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
+        handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
+        handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
+        
+        % Refresh image slice
+        aspect = calculateDAspect(handles.gui.transversalOption,...
+            handles.gui.sagittalOption, handles.data.imageCoreInfo.metadata{1},...
+            handles.data.imageCoreInfo.metadata{2});
+        
+        currentPosition = getSlicePosition(get(handles.gui.textSliceNumber,...
+            'String'), NaN);
+        imageSlice = squeeze(handles.data.imageCoreInfo.matrix(:, :,...
+            currentPosition, :));
+        
+        showImageSlice(handles.gui.imageAxes,...
+            imageSlice, handles.data.Rmin, handles.data.Rmax,...
+            aspect);
+        
+        guidata(hObject, handles);
+        
+        % Set status to ready
+        displayStatus(handles.gui.statusText, handles.gui.statusLight)
+    end
 end
 
 function setAortaRoi(hObject, eventdata)
