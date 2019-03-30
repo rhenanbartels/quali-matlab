@@ -963,6 +963,15 @@ function rescaleImage(hObject, eventdata)
         prevSntercept);
     
     handles = rescaleImage(handles);
+    
+    % Get Tranversal, Sagittal and Coronal Orientation
+    [matrixSagittal, matrixCoronal] = getOrientations(...,
+        handles.data.imageCoreInfo.matrix);
+    
+    handles.data.imageCoreInfo.matrixTransversal = handles.data.imageCoreInfo.matrix;
+    handles.data.imageCoreInfo.matrixSagittal = matrixSagittal;
+    handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
+    
     guidata(hObject, handles);
 end
 
