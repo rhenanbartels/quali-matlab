@@ -673,7 +673,6 @@ function rescaleImage(hObject, eventdata)
         'Visible', 'Off',...
         'Tag', 'fig');    
     movegui(fig, 'center')
-    set(fig, 'Visible', 'On') 
     
     rescaleGroup = uibuttongroup('Parent', fig,...
         'Units', 'Normalized',...
@@ -963,6 +962,7 @@ function rescaleImage(hObject, eventdata)
     % Set status to ready
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
     
+    set(fig, 'Visible', 'On') 
     uiwait(fig)        
     
     displayStatus(handles.gui.statusText, handles.gui.statusLight,...
