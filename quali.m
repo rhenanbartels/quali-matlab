@@ -945,6 +945,9 @@ function rescaleImage(hObject, eventdata)
     end
     
 
+    displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+            'Preparing for rescaling...')
+
     prevRescaleOption = handles.rescaleSettings.rescaleOption;
     prevSlope = handles.rescaleSettings.slope;
     prevSntercept = handles.rescaleSettings.intercept;
@@ -957,8 +960,13 @@ function rescaleImage(hObject, eventdata)
     setRescaleOption(handles)
     drawnow
         
-    uiwait(fig)    
+    % Set status to ready
+    displayStatus(handles.gui.statusText, handles.gui.statusLight)
     
+    uiwait(fig)        
+    
+    displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+            'Rescaling image...')
     handles = removeRescalingFromImage(handles, prevRescaleOption, prevSlope,...
         prevSntercept);
     
@@ -973,6 +981,9 @@ function rescaleImage(hObject, eventdata)
     handles.data.imageCoreInfo.matrixCoronal = matrixCoronal;
     
     guidata(hObject, handles);
+            
+    % Set status to ready
+    displayStatus(handles.gui.statusText, handles.gui.statusLight)
 end
 
 function setAortaRoi(hObject, eventdata)
