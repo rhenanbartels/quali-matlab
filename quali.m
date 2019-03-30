@@ -943,18 +943,24 @@ function rescaleImage(hObject, eventdata)
        end
     end
     
+
+    prevRescaleOption = handles.rescaleSettings.rescaleOption;
+    prevSlope = handles.rescaleSettings.slope;
+    prevSntercept = handles.rescaleSettings.intercept;
+
+    handles = removeRescalingFromImage(handles, prevRescaleOption, prevSlope,...
+        prevSntercept);
+    
     setMetadataRescaleInfo(handles)
     setRoiRescaleInfo(handles)
     setRescaleOption(handles)
     drawnow
-    
-    prevRescaleOption = handles.rescaleSettings.rescaleOption;
-    prevSlope = handles.rescaleSettings.slope;
-    prevSntercept = handles.rescaleSettings.intercept;
-    uiwait(fig)
+        
+    uiwait(fig)    
     
     handles = removeRescalingFromImage(handles, prevRescaleOption, prevSlope,...
         prevSntercept);
+    
     handles = rescaleImage(handles);
     guidata(hObject, handles);
 end
