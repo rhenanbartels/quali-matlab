@@ -1549,6 +1549,10 @@ function openMatFile(hObject, ~)
             % Start Screen Objects
             handles = startImageScreen(handles);
             
+            % Mask Settings
+            handles.data.imageCoreInfo.maskSettings.rgb = [0, 1, 0];
+            handles.data.imageCoreInfo.maskSettings.opacity = 0.5;
+            
             % Save imported mask
             guidata(hObject, handles)
         catch errorObj
