@@ -677,11 +677,28 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 
 function emphysemaAnalysis(hObject, eventdata)
     handles = guidata(hObject);
+
+    displayStatus(handles.gui.statusText, handles.gui.statusLight,...
+        'Calculating emphysema indices...')
     
-    emphysemaIndices(handles.data.imageCoreInfo.matrix,...
+   [huValues, voxelPerDensity, volumePerDensity, massPerDensity] = ...
+       emphysemaIndices(handles.data.imageCoreInfo.matrix,...
         handles.data.imageCoreInfo.masks,...
         handles.data.voxelVolume,...
         handles)
+    
+    handles.results.huValues = huValues;
+    handles.results.voxelPerDensity = voxelPerDensity;
+    handles.results.volumePerDensity = volumePerDensity;
+    handles.results.massPerDensity = massPerDensity;    
+    
+    % Set status to ready
+    displayStatus(handles.gui.statusText, handles.gui.statusLight)
+    
+    guidata(handles, hObject)
+end
+
+function aerationAnalysis(hObject, eventdata)
 end
 
 function rescaleImage(hObject, eventdata)
