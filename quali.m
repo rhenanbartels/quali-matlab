@@ -688,9 +688,10 @@ function emphysemaAnalysis(hObject, eventdata)
         handles);    
     
     [percx, rax] = calculate_percx_rax(huValues, voxelPerDensity,15, -950);
+    [m3, m15, m50, m50c, m85c, m97c] = calculate_mx(massPerDensity, volumePerDensity);
     
     [hyperVolume, normallyVolume, poorVolume, nonVolume,...
-    hyperMass, normallyMass, poorMass, nonMass...
+    hyperMass, normallyMass, poorMass, nonMass,...
     pHyperVolume, pNormallyVolume, pPoorVolume, pNonVolume,...
     pHyperMass, pNormallyMass, pPoorMass, pNonMass] = aerationIndices(...
     huValues, volumePerDensity, massPerDensity);
@@ -698,7 +699,16 @@ function emphysemaAnalysis(hObject, eventdata)
     handles.results.huValues = huValues;
     handles.results.voxelPerDensity = voxelPerDensity;
     handles.results.volumePerDensity = volumePerDensity;
-    handles.results.massPerDensity = massPerDensity;    
+    handles.results.massPerDensity = massPerDensity;   
+    
+    handles.results.percx = percx;
+    handles.results.rax = rax;
+    handles.results.m3 = m3;
+    handles.results.m15 = m15;
+    handles.results.m50 = m50;
+    handles.results.m50c = m50c;
+    handles.results.m85c = m85c;
+    handles.results.m97c = m97c;
     
     handles.results.hyperVolume = hyperVolume;
     handles.results.normallyVolume = normallyVolume;
@@ -1783,6 +1793,26 @@ function [percx, rax] = calculate_percx_rax(huValues, voxelPerDensity,...
     rax = sum(voxelPerDensity(huValues <= raThreshold)) / sum(voxelPerDensity) * 100;
     [val, pos] = min(abs(p_voxel - percThreshold));
     percx = huValues(pos);
+end
+
+function [m3, m15, m50, m50c, m85c, m97c] = calculate_mx(massPerDensity,...
+    volumePerDensity)
+    c_vol = cumsum(volumePerDensity);
+    p_vol = c_vol / c_vol(end) * 100;
+    c_mass = cumsum(massPerDensity);
+    
+    [val, pos3] = min(abs(p_vol - 3));
+    [val, pos15] = min(abs(p_vol - 15));
+    [val, pos50] = min(abs(p_vol - 50));
+    [val, pos85c] = min(abs(p_vol - 85));
+    [val, pos97c] = min(abs(p_vol - 97));
+    
+    m3 = c_mass(pos3);
+    m15 = c_mass(pos15);
+    m50 = c_mass(pos50);
+    m50c = c_mass(end) - m50;
+    m85c = c_mass(end) - c_mass(pos85c);
+    m97c = c_mass(end) - c_mass(pos97c);
 end
 
 function [slope, intercept] = rescaleWithRoi(handles)
