@@ -685,17 +685,42 @@ function emphysemaAnalysis(hObject, eventdata)
        emphysemaIndices(handles.data.imageCoreInfo.matrix,...
         handles.data.imageCoreInfo.masks,...
         handles.data.voxelVolume,...
-        handles)
+        handles);    
+    
+    [hyperVolume, normallyVolume, poorVolume, nonVolume,...
+    hyperMass, normallyMass, poorMass, nonMass...
+    pHyperVolume, pNormallyVolume, pPoorVolume, pNonVolume,...
+    pHyperMass, pNormallyMass, pPoorMass, pNonMass] = aerationIndices(...
+    huValues, volumePerDensity, massPerDensity);
     
     handles.results.huValues = huValues;
     handles.results.voxelPerDensity = voxelPerDensity;
     handles.results.volumePerDensity = volumePerDensity;
     handles.results.massPerDensity = massPerDensity;    
     
+    handles.results.hyperVolume = hyperVolume;
+    handles.results.normallyVolume = normallyVolume;
+    handles.results.poorVolume = poorVolume;
+    handles.results.nonVolume = nonVolume;
+    handles.results.hyperMass = hyperMass;
+    handles.results.normallyMass = normallyMass;
+    handles.results.poorMass = poorMass;
+    handles.results.nonMass = nonMass;
+    
+    %Percentual        
+    handles.results.pHyperVolume = pHyperVolume;
+    handles.results.pNormallyVolume = pNormallyVolume;
+    handles.results.pPoorVolume = pPoorVolume;
+    handles.results.pNonVolume = pNonVolume;
+    handles.results.pHyperMass = pHyperMass;
+    handles.results.pNormallyMass = pNormallyMass;
+    handles.results.pPoorMass = pPoorMass;
+    handles.results.pNonMass = pNonMass;
+    
     % Set status to ready
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
     
-    guidata(handles, hObject)
+    guidata(hObject, handles);
 end
 
 function aerationAnalysis(hObject, eventdata)
