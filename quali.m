@@ -180,16 +180,19 @@ function mainFig = startMainInterface()
     
     analysisMenu = uimenu('Parent', mainFig,...
         'Label', 'Analysis',...
-        'Tag', 'analysisMenu');
+        'Tag', 'analysisMenu',...
+        'Enable', 'Off');
     
     uimenu('Parent', analysisMenu,...
-        'Label', 'Emphysema indices',...
-        'Callback', @emphysemaAnalysis)
+        'Label', 'Quantitative Analysis',...
+        'Callback', @quantitativeAnalysis)
+    
+    uimenu('Parent', analysisMenu,...
+        'Label', 'Show Results',...
+        'Callback', @showResultsCallback,...
+        'Tag', 'showResultsMenu',...
+        'Enable', 'Off')
         
-    uimenu('Parent', analysisMenu,...
-        'Label', 'Indices per Aeration',...
-        'Callback', @aerationAnalysis)
-    
     uicontrol('Parent', mainFig,...
         'Style', 'slider',...
         'Units', 'Normalized',...
@@ -675,7 +678,7 @@ function startAxesMetadataInfo(metadataPanel, bckColor)
 %and moveMove
 
 
-function emphysemaAnalysis(hObject, eventdata)
+function quantitativeAnalysis(hObject, eventdata)
     handles = guidata(hObject);
 
     displayStatus(handles.gui.statusText, handles.gui.statusLight,...
@@ -732,10 +735,16 @@ function emphysemaAnalysis(hObject, eventdata)
     % Set status to ready
     displayStatus(handles.gui.statusText, handles.gui.statusLight)
     
+    % Allow show results
+    set(handles.gui.showResultsMenu, 'Enable', 'On')
+    
     guidata(hObject, handles);
 end
 
-function aerationAnalysis(hObject, eventdata)
+function showResultsCallback(hObject, eventdata)
+    handles = guidata(hObject);
+    
+    showResults(handles.results);
 end
 
 function rescaleImage(hObject, eventdata)
@@ -1693,6 +1702,9 @@ function openMatFile(hObject, ~)
             handles.data.imageCoreInfo.maskSettings.rgb = [0, 1, 0];
             handles.data.imageCoreInfo.maskSettings.opacity = 0.5;
             
+            % Allow analysis
+            set(handles.gui.analysisMenu, 'Enable', 'On')
+            
             % Save imported mask
             guidata(hObject, handles)
         catch errorObj
@@ -1784,6 +1796,18 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function showResults(results)
+    screenSize = get(0, 'ScreenSize');
+    mainInterfaceColor = [0, 0, 0];
+    resultsFig = figure('Position', screenSize,...
+        'MenuBar', 'none',...
+        'NumberTitle', 'off',...
+        'Name', 'Results - Quantitative Analysis of Lung Images - 0.0.0dev0',...
+        'Color', mainInterfaceColor,...
+        'Resize', 'On');
+end
+
 
 function [percx, rax] = calculate_percx_rax(huValues, voxelPerDensity,...
     percThreshold, raThreshold)
