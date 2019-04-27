@@ -687,6 +687,8 @@ function emphysemaAnalysis(hObject, eventdata)
         handles.data.voxelVolume,...
         handles);    
     
+    [percx, rax] = calculate_percx_rax(huValues, voxelPerDensity,15, -950);
+    
     [hyperVolume, normallyVolume, poorVolume, nonVolume,...
     hyperMass, normallyMass, poorMass, nonMass...
     pHyperVolume, pNormallyVolume, pPoorVolume, pNonVolume,...
@@ -1772,6 +1774,16 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                             UTILS                                
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [percx, rax] = calculate_percx_rax(huValues, voxelPerDensity,...
+    percThreshold, raThreshold)
+    c_voxel = cumsum(voxelPerDensity);
+    p_voxel = c_voxel / c_voxel(end) * 100;
+    
+    rax = sum(voxelPerDensity(huValues <= raThreshold)) / sum(voxelPerDensity) * 100;
+    [val, pos] = min(abs(p_voxel - percThreshold));
+    percx = huValues(pos);
+end
 
 function [slope, intercept] = rescaleWithRoi(handles)
     slope = NaN;
