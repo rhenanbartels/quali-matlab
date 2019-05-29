@@ -1842,6 +1842,8 @@ function showResults(results)
             'Color', [0.1, 0.1, 0.1]);
     end
     
+    currentAxes = resultsAxes{1};
+    
     mainResultsAxis = axes('Parent', resultsFig,...
         'Units', 'Normalized',...
         'Position', [0.35, 0.3, 0.5, 0.6],...
@@ -1913,7 +1915,7 @@ function showResults(results)
         end
     end
 
-    function plotSingleCurve(x, y, xLabel, yLabel)
+    function plotSingleCurve(x, y, xLabel, yLabel, axesIndex)
         axes(mainResultsAxis)
         plot(x, y, 'LineWidth', 2)
         set(mainResultsAxis, 'Color', [0.1, 0.1, 0.1], 'Xcolor', [1, 1, 1],...
@@ -1921,11 +1923,20 @@ function showResults(results)
         'Fontweight', 'bold')
         xlabel(xLabel)
         ylabel(yLabel)
+        
+        % Reset previous selected axes color
+        previousLineObj = findobj(currentAxes, 'type', 'line');
+        set(previousLineObj, 'Color', [0 0.4470 0.7410])
+        
+        % Change thumbnail line color
+        lineObj = findobj(resultsAxes{axesIndex}, 'type', 'line');
+        set(lineObj, 'Color', [0, 1, 0])
+        currentAxes = resultsAxes{axesIndex};
     end
 
     plotResults()
     plotSingleCurve(results.huValues, results.volumePerDensity / 1000,...
-       'Density (Hounsfield Unit)', 'Volume (ml)')
+       'Density (Hounsfield Unit)', 'Volume (ml)', 1)
 end
 
 
