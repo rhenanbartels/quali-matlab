@@ -1808,8 +1808,15 @@ function showResults(results)
     
     axesPositions = {[0.02, 0.8, 0.1, 0.12], [0.14, 0.8, 0.1, 0.12],...
                      [0.02, 0.62, 0.1, 0.12], [0.14, 0.62, 0.1, 0.12],...
-                     [0.02, 0.44, 0.1, 0.12], [0.14, 0.44, 0.1, 0.12]};
+                     [0.02, 0.44, 0.1, 0.12], [0.14, 0.44, 0.1, 0.12],...
+                     [0.02, 0.26, 0.1, 0.12]};
                  
+     
+     % Calculate Volume per massa curve
+     cumulativeVolume = cumsum(results.volumePerDensity);
+     results.percentualVolume = cumulativeVolume / cumulativeVolume(end) * 100;
+     results.cumulativeMass = cumsum(results.massPerDensity);
+     
      resultsArray = {{results.huValues, results.volumePerDensity,...
          'Density (Hounsfield Unit)', 'Volume (ml)'},...
          {results.huValues, results.massPerDensity,...
@@ -1821,10 +1828,10 @@ function showResults(results)
          {results.huValues, results.volumePerDensity,...
          'Density (Hounsfield Unit)', 'Volume (ml)'},...
          {results.huValues, results.volumePerDensity,...
-         'Density (Hounsfield Unit)', 'Volume (ml)'}};
+         'Density (Hounsfield Unit)', 'Volume (ml)'},...
+         {results.cumulativeMass, results.percentualVolume}};
     
-    
-    for i = 1:6
+    for i = 1:7
         resultsAxes{i} = axes('Parent', resultsFig,...
             'Units', 'Normalized',...
             'Position', axesPositions{i},...
@@ -1845,22 +1852,26 @@ function showResults(results)
         switch eventdata.Source.Tag
             case 'resultsAxes1'
                     plotSingleCurve(results.huValues, results.volumePerDensity / 1000,...
-                      'Density (Hounsfield Unit)', 'Volume (ml)')
+                      'Density (Hounsfield Unit)', 'Volume (ml)', 1)
             case 'resultsAxes2'
                     plotSingleCurve(results.huValues, results.massPerDensity / 1000,...
-                      'Density (Hounsfield Unit)', 'Mass (g)')
+                      'Density (Hounsfield Unit)', 'Mass (g)', 2)
             case 'resultsAxes3'
                     plotSingleCurve(results.huValues, cumsum(results.volumePerDensity / 1000),...
-                        'Density (Hounsfield Unit)', 'Volume (ml)')
+                        'Density (Hounsfield Unit)', 'Volume (ml)', 3)
             case 'resultsAxes4'
                     plotSingleCurve(results.huValues, cumsum(results.massPerDensity),...
-                      'Density (Hounsfield Unit)', 'Volume (ml)')
+                      'Density (Hounsfield Unit)', 'Volume (ml)', 4)
             case 'resultsAxes5'
                     plotSingleCurve(results.huValues, results.volumePerDensity / 1000,...
-                      'Density (Hounsfield Unit)', 'Volume (ml)')
+                      'Density (Hounsfield Unit)', 'Volume (ml)', 5)
             case 'resultsAxes6'
                 plotSingleCurve(results.huValues, results.massPerDensity / 1000,...
-                    'Density (Hounsfield Unit)', 'Mass (g)')
+                    'Density (Hounsfield Unit)', 'Mass (g)', 6)
+                
+            case 'resultsAxes7'
+                plotSingleCurve(results.cumulativeMass, results.percentualVolume,...
+                    'Cumulative Massa (g)', 'Percentual Volume (% TLC)', 7)
         end
         
     end
@@ -1887,9 +1898,13 @@ function showResults(results)
         axes(resultsAxes{6})
         plot(results.huValues, results.massPerDensity, 'LineWidth',2)
         
-        titles = {'Volume', 'Mass', 'Cumulative Volume', 'Cumulative Mass',...
-            'Volume Aeration', 'Mass Aeration'};
-        for k=1:6
+                        
+        axes(resultsAxes{7})
+        plot(results.cumulativeMass, results.percentualVolume, 'LineWidth',2)
+        
+        titles = {'Volume Histogram', 'Mass Histogram', 'Cumulative Volume',...
+            'Cumulative Mass','Volume Aeration', 'Mass Aeration', 'Volume x Mass'};
+        for k=1:7
             set(resultsAxes{k}, 'Color', [0.1, 0.1, 0.1], 'Xcolor', [0, 0, 0],...
             'Ycolor', [0, 0, 0], 'ButtonDownFcn', @plotResultCallback,...
             'Tag', ['resultsAxes' num2str(k)])
