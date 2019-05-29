@@ -1835,7 +1835,7 @@ function showResults(results)
     axesPanel = uipanel('Parent', resultsFig,...
         'Units', 'Normalized',...
         'Position', [0, 0.25, 0.28, 0.7],...
-        'Backgroundcolor', [0.1, 0.1, 0.1]);
+        'Backgroundcolor', mainInterfaceColor);
      
     for i = 1:7
         resultsAxes{i} = axes('Parent', axesPanel,...
@@ -1845,7 +1845,7 @@ function showResults(results)
             'YTickLabel', [],...
             'Xcolor', [0, 0, 0],...
             'Ycolor', [0, 0, 0],...
-            'Color', [0.1, 0.1, 0.1]);
+            'Color', mainInterfaceColor);
     end
     
     currentAxes = resultsAxes{1};
@@ -1853,8 +1853,10 @@ function showResults(results)
     mainResultsAxis = axes('Parent', resultsFig,...
         'Units', 'Normalized',...
         'Position', [0.35, 0.3, 0.5, 0.6],...
-        'Color', [0.1, 0.1, 0.1]);
+        'Color', mainInterfaceColor);
     
+    
+    writeResultsTable()
     
     function plotResultCallback(hObject, eventdata)
         switch eventdata.Source.Tag
@@ -1891,7 +1893,7 @@ function showResults(results)
         
         axes(resultsAxes{2})
         plot(results.huValues, results.massPerDensity, 'LineWidth',2)
-        set(resultsAxes{2}, 'Color', [0.1, 0.1, 0.1], 'Xcolor', [0, 0, 0],...
+        set(resultsAxes{2}, 'Color', mainInterfaceColor, 'Xcolor', [0, 0, 0],...
             'Ycolor', [0, 0, 0])
         
         axes(resultsAxes{3})
@@ -1904,8 +1906,7 @@ function showResults(results)
         plot(results.huValues, results.volumePerDensity, 'LineWidth',2)
                 
         axes(resultsAxes{6})
-        plot(results.huValues, results.massPerDensity, 'LineWidth',2)
-        
+        plot(results.huValues, results.massPerDensity, 'LineWidth',2)        
                         
         axes(resultsAxes{7})
         plot(results.cumulativeMass, results.percentualVolume, 'LineWidth',2)
@@ -1913,9 +1914,10 @@ function showResults(results)
         titles = {'Volume Histogram', 'Mass Histogram', 'Cumulative Volume',...
             'Cumulative Mass','Volume Aeration', 'Mass Aeration', 'Volume x Mass'};
         for k=1:7
-            set(resultsAxes{k}, 'Color', [0.1, 0.1, 0.1], 'Xcolor', [0, 0, 0],...
-            'Ycolor', [0, 0, 0], 'ButtonDownFcn', @plotResultCallback,...
-            'Tag', ['resultsAxes' num2str(k)])
+            set(resultsAxes{k}, 'Color', mainInterfaceColor, 'Xcolor', [0, 0, 0],...
+            'Ycolor', [0.1, 0.1, 0.1], 'ButtonDownFcn', @plotResultCallback,...
+            'Tag', ['resultsAxes' num2str(k)], 'Xtick', [], 'Ytick', [],...
+            'Linewidth', 2)
         
             title(resultsAxes{k}, titles{k}, 'Color', 'w')
         end
@@ -1923,8 +1925,8 @@ function showResults(results)
 
     function plotSingleCurve(x, y, xLabel, yLabel, axesIndex)
         axes(mainResultsAxis)
-        plot(x, y, 'LineWidth', 2)
-        set(mainResultsAxis, 'Color', [0.1, 0.1, 0.1], 'Xcolor', [1, 1, 1],...
+        plot(x, y, 'LineWidth', 3)
+        set(mainResultsAxis, 'Color', mainInterfaceColor, 'Xcolor', [1, 1, 1],...
         'Ycolor', [1, 1, 1], 'Box', 'Off', 'Fontsize', 16,...
         'Fontweight', 'bold')
         xlabel(xLabel)
